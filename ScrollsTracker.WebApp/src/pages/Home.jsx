@@ -1,40 +1,54 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import MangaShelf from "../components/MangaShelf";
 
 function Home() {
-  const [obras, setObras] = useState([]);
+  // const [obras, setObras] = useState([]);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  // useEffect(() => {
+  //   const controller = new AbortController();
 
-    const fetchObras = async () => {
-      try {
-        const response = await fetch(
-          "https://localhost:7071/api/ScrollsTracker/ObterLancamentos",
-          {
-            method: "GET",
-            signal: controller.signal,
-          }
-        );
-        const data = await response.json();
-        console.log("Dados recebidos:", data);
-        setObras(data);
-      } catch (error) {
-        if (error.name === "AbortError") {
-          console.log("Fetch abortado!");
-        } else {
-          console.error("Erro na requisição:", error);
-        }
-      }
-    };
+  //   const fetchObras = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         "https://localhost:7071/api/ScrollsTracker/ObterLancamentos",
+  //         {
+  //           method: "GET",
+  //           signal: controller.signal,
+  //         }
+  //       );
+  //       const data = await response.json();
+  //       console.log("Dados recebidos:", data);
+  //       setObras(data);
+  //     } catch (error) {
+  //       if (error.name === "AbortError") {
+  //         console.log("Fetch abortado!");
+  //       } else {
+  //         console.error("Erro na requisição:", error);
+  //       }
+  //     }
+  //   };
 
-    fetchObras();
+  //   fetchObras();
 
-    return () => {
-      console.log("Componente desmontado, abortando fetch...");
-      controller.abort();
-    };
-  }, []);
+  //   return () => {
+  //     console.log("Componente desmontado, abortando fetch...");
+  //     controller.abort();
+  //   };
+  // }, []);
+
+  const { data: obras = [], isLoading } = useQuery({
+    queryKey: ["obras"],
+    queryFn: async () => {
+      const res = await fetch(
+        "https://localhost:7071/api/ScrollsTracker/ObterLancamentos"
+      );
+      return res.json();
+    },
+  });
+
+  if (isLoading) {
+    return <h1>Carregando...</h1>;
+  }
 
   return (
     <div className="space-y-4">
