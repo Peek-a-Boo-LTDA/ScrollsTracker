@@ -36,7 +36,7 @@ namespace ScrollsTracker.Application.Services.Filter
 				_obra.Imagem = obra.Imagem;
 			}
 
-			if (origem == EnumSources.MangaUpdate && !string.IsNullOrEmpty(obra.Imagem))
+			if (origem == EnumSources.MangaDex && !string.IsNullOrEmpty(obra.Imagem))
 			{
 				_obra.Imagem = obra.Imagem;
 			}
