@@ -72,7 +72,7 @@ namespace ScrollsTracker.Infra.Sources
 		private string ProcurarIdDaObraPorTitulo(BaseMangaDexSearchResponse search, string titulo)
 		{
 			var melhorPesquisa = search.Data!.FirstOrDefault()!.Id;
-			var melhorPontuacao = 85;
+			var melhorPontuacao = 80;
 
 			foreach (var item in search.Data!) 
 			{
