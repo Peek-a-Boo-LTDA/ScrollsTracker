@@ -1,4 +1,5 @@
-﻿using ScrollsTracker.Domain.Enum;
+﻿using FuzzySharp;
+using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Chapter;
@@ -33,7 +34,7 @@ namespace ScrollsTracker.Infra.Sources
 				return null;
 			}
 
-			var id = ProcurarIdDaObraPorTituloERemoveOutrosResultados(search, titulo);
+			var id = ProcurarIdDaObraPorTitulo(search, titulo);
 			
 			if (string.IsNullOrEmpty(id))
 			{
@@ -68,8 +69,11 @@ namespace ScrollsTracker.Infra.Sources
 			};
 		}
 
-		private string ProcurarIdDaObraPorTituloERemoveOutrosResultados(BaseMangaDexSearchResponse search, string titulo)
+		private string ProcurarIdDaObraPorTitulo(BaseMangaDexSearchResponse search, string titulo)
 		{
+			var melhorPesquisa = search.Data!.FirstOrDefault()!.Id;
+			var melhorPontuacao = 85;
+
 			foreach (var item in search.Data!) 
 			{
 				if(item.Attributes is null)
@@ -78,15 +82,21 @@ namespace ScrollsTracker.Infra.Sources
 				}
 
 				item.Attributes.Title.TryGetValue("en" as string, out var title);
-				if (title != null && title.Trim().Equals(titulo.Trim(), StringComparison.OrdinalIgnoreCase))
+				if (title is null)
 				{
-					return item.Id;
+					continue;
 				}
 
-				search.Data.Remove(item);
+				int similaridade = Fuzz.Ratio(title, titulo);
+				
+				if (similaridade >= melhorPontuacao)
+				{
+					melhorPontuacao = similaridade;
+					melhorPesquisa = item.Id;
+				}
 			}
 
-			return "";
+			return melhorPesquisa;
 		}
 
 		private string MontarFileName(string fileName, string id)

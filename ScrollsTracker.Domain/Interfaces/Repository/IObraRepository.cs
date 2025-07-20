@@ -10,6 +10,7 @@ namespace ScrollsTracker.Domain.Interfaces.Repository
 		Task<int> AddAsync(Obra obra);
 		Task<Obra?> GetObraByIdAsync(int id);
 		Task<int> UpdateObraAsync(Obra obra);
+		Task<int> CadastrarObraAsync(Obra obra);
 		Task<int> DeleteObraByIdAsync(int id);
 	}
 }
