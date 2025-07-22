@@ -35,7 +35,7 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(await _obraFacade.BuscarObraAgregadaAsync(titulo));
 		}
 
-		[HttpGet("ObterObra")]
+		[HttpGet("ObterObra/{id}")]
 		public async Task<IActionResult> GetObraByIdAsync(int id)
 		{
 			return Ok(await _obraFacade.GetObraByIdAsync(id));
@@ -78,7 +78,7 @@ namespace ScrollsTracker.Api.Controllers
             }
         }
 
-		[HttpPost("AtualizarObra")]
+		[HttpPut("AtualizarObra")]
 		public async Task<IActionResult> AtualizarObraAsync([FromBody] ObraRequest obraRequest)
 		{
 			try
@@ -94,7 +94,7 @@ namespace ScrollsTracker.Api.Controllers
 			}
 		}
 
-		[HttpDelete("DeletarObra")]
+		[HttpDelete("DeletarObra/{id}")]
 		public async Task<IActionResult> DeletarObraAsync(int id)
 		{
 			try

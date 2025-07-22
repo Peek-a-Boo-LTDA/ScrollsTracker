@@ -9,5 +9,6 @@
 		public int UltimoCapituloLido { get; set; }
 		public string? Imagem { get; set; }
 		public string? Status { get; set; }
+		public string? StatusLeitura { get; set; }
 	}
 }

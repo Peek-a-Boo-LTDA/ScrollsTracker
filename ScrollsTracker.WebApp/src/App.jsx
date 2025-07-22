@@ -1,9 +1,9 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-
 import Layout from "./components/Layout";
 import Biblioteca from "./pages/Biblioteca";
 import Home from "./pages/Home";
 import CadastrarObra from "./pages/CadastrarObra";
+import AtualizarObra from "./pages/AtualizarObra";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +20,10 @@ const router = createBrowserRouter([
       {
         path: "/cadastrar-obra",
         element: <CadastrarObra />,
+      },
+      {
+        path: "/atualizar-obra/:id",
+        element: <AtualizarObra />,
       },
     ],
   },

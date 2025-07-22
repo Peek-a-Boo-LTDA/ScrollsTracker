@@ -10,7 +10,7 @@
                     policy =>
                     {
                         //Url do front
-                        policy.WithOrigins("http://localhost:4000")
+                        policy.WithOrigins("http://localhost:5173")
                               .AllowAnyMethod()
                               .AllowAnyHeader();
                     });

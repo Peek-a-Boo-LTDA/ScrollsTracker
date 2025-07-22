@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace ScrollsTracker.Domain.Models
 {
@@ -15,6 +14,7 @@ namespace ScrollsTracker.Domain.Models
 		public int UltimoCapituloLido { get; set; }
 		public string? Imagem { get; set; }
 		public string? Status { get; set; }
+		public string? StatusLeitura { get; set; }
 		public DateTime DataAtualizacao { get; set; } = DateTime.Now;
 		public DateTime DataVerificacao { get; set; } = DateTime.Now;
 	}

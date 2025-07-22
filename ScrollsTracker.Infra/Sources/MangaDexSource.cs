@@ -61,8 +61,8 @@ namespace ScrollsTracker.Infra.Sources
 
 			return new Obra
 			{
-				Titulo = titulo,
-				Descricao = infoObra!.Description["en"],
+				Titulo = infoObra!.Title["en"],
+				Descricao = infoObra!.Description["en"].Replace("\n", ""),
 				Status = infoObra.Status,
 				TotalCapitulos = int.Parse(capitulos.Data.FirstOrDefault()!.Attributes!.Chapters),
 				Imagem = cover is not null ? MontarFileName(cover.Data.FirstOrDefault()!.Attributes!.FileName, id) : "",
@@ -106,8 +106,9 @@ namespace ScrollsTracker.Infra.Sources
 
 		public async Task<MangaDexCoverResponse?> ObterCoverFileNameAsync(string mangaId)
 		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 			var url = $"https://api.mangadex.org/cover?manga[]={mangaId}";
-			var response = await _httpClient.GetAsync(url);
+			var response = await _httpClient.GetAsync(url, cts.Token);
 
 			if (!response.IsSuccessStatusCode)
 			{
@@ -121,8 +122,9 @@ namespace ScrollsTracker.Infra.Sources
 
 		public async Task<BaseMangaDexChapterResponse?> ObterCapitulosAsync(string mangaId)
 		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 			var url = $"https://api.mangadex.org/manga/{mangaId}/feed?limit=1&order[chapter]=desc";
-			var response = await _httpClient.GetAsync(url);
+			var response = await _httpClient.GetAsync(url, cts.Token);
 
 			if (!response.IsSuccessStatusCode)
 			{
@@ -137,9 +139,10 @@ namespace ScrollsTracker.Infra.Sources
 
 		public async Task<BaseMangaDexSearchResponse?> BuscarMangasPorTituloAsync(string titulo)
 		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 			var encodedTitle = Uri.EscapeDataString(titulo);
 			var url = $"https://api.mangadex.org/manga?title={encodedTitle}&limit=3";
-			var response = await _httpClient.GetAsync(url);
+			var response = await _httpClient.GetAsync(url, cts.Token);
 
 			if (!response.IsSuccessStatusCode)
 			{
