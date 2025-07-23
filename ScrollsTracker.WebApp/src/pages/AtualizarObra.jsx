@@ -36,11 +36,31 @@ function AtualizarObra() {
     queryFn: () => buscarObraPorIdApi(id),
   });
 
+  const deletarObraApi = async () => {
+    const response = await fetch(
+      `https://localhost:7071/api/ScrollsTracker/DeletarObra/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
+    if (!response.ok) throw new Error("Falha ao deletar");
+    return response.json();
+  };
+
   // 2. Cria a mutação para ATUALIZAR a obra
   const { mutate: atualizarObra, isPending: isUpdating } = useMutation({
     mutationFn: atualizarObraApi,
     onSuccess: () => {
       alert("Obra atualizada com sucesso!");
+      navigate("/");
+    },
+    onError: (error) => alert(error.message),
+  });
+
+  const { mutate: deletarObra, isPending: isDeleting } = useMutation({
+    mutationFn: deletarObraApi,
+    onSuccess: () => {
+      alert("Obra deletada com sucesso!");
       navigate("/");
     },
     onError: (error) => alert(error.message),
@@ -60,6 +80,8 @@ function AtualizarObra() {
         isSubmitting={isUpdating}
         submitButtonText="Salvar Alterações"
         Type={"Atualizar"}
+        onDelete={deletarObra}
+        isDeleting={isDeleting}
       />
     </div>
   );

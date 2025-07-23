@@ -8,6 +8,8 @@ function ObraForm({
   isSubmitting,
   submitButtonText = "Salvar",
   Type,
+  isDeleting,
+  onDelete,
 }) {
   const {
     register,
@@ -305,6 +307,19 @@ function ObraForm({
                 {isSubmitting ? "Salvando..." : submitButtonText}
               </button>
             </div>
+            {/* Botão de Deletar (se aplicável) */}
+            {Type === "Atualizar" && onDelete && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => onDelete(getValues())}
+                  disabled={isDeleting}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? "Deletando..." : "Deletar Obra"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </form>

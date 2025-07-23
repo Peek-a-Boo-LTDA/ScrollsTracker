@@ -1,43 +1,8 @@
-// import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import MangaShelf from "../components/MangaShelf";
 import { Link } from "react-router-dom";
 
 function Biblioteca() {
-  // const [obras, setObras] = useState([]);
-
-  //   useEffect(() => {
-  //     const controller = new AbortController();
-
-  //     const fetchObras = async () => {
-  //       try {
-  //         const response = await fetch(
-  //           "https://localhost:7071/api/ScrollsTracker/Obras",
-  //           {
-  //             method: "GET",
-  //             signal: controller.signal,
-  //           }
-  //         );
-  //         const data = await response.json();
-  //         console.log("Dados recebidos:", data);
-  //         setObras(data);
-  //       } catch (error) {
-  //         if (error.name === "AbortError") {
-  //           console.log("Fetch abortado!");
-  //         } else {
-  //           console.error("Erro na requisição:", error);
-  //         }
-  //       }
-  //     };
-
-  //     fetchObras();
-
-  //     return () => {
-  //       console.log("Componente desmontado, abortando fetch...");
-  //       controller.abort();
-  //     };
-  //   }, []);
-
   const { data: obras = [], isLoading } = useQuery({
     queryKey: ["obras"],
     queryFn: async () => {
