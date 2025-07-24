@@ -9,6 +9,7 @@
                 options.AddPolicy("PermitirFrontend",
                     policy =>
                     {
+                        //Url do front
                         policy.WithOrigins("http://localhost:5173")
                               .AllowAnyMethod()
                               .AllowAnyHeader();

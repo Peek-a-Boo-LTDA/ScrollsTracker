@@ -1,43 +1,23 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import MangaShelf from "../components/MangaShelf";
 
 function Home() {
-  const [obras, setObras] = useState([]);
+  const { data: obras = [], isLoading } = useQuery({
+    queryKey: ["obras"],
+    queryFn: async () => {
+      const res = await fetch(
+        "https://localhost:7071/api/ScrollsTracker/ObterLancamentos"
+      );
+      return res.json();
+    },
+  });
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchObras = async () => {
-      try {
-        const response = await fetch(
-          "https://localhost:7071/api/ScrollsTracker/ObterLancamentos",
-          {
-            method: "GET",
-            signal: controller.signal,
-          }
-        );
-        const data = await response.json();
-        console.log("Dados recebidos:", data);
-        setObras(data);
-      } catch (error) {
-        if (error.name === "AbortError") {
-          console.log("Fetch abortado!");
-        } else {
-          console.error("Erro na requisição:", error);
-        }
-      }
-    };
-
-    fetchObras();
-
-    return () => {
-      console.log("Componente desmontado, abortando fetch...");
-      controller.abort();
-    };
-  }, []);
+  if (isLoading) {
+    return <h1>Carregando...</h1>;
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 h-screen">
       <div>
         <h1 className="text-white">Bem-vindo ao ScrollsMaster</h1>
       </div>

@@ -1,4 +1,5 @@
-﻿using ScrollsTracker.Domain.Enum;
+﻿using FuzzySharp;
+using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Chapter;
@@ -33,7 +34,7 @@ namespace ScrollsTracker.Infra.Sources
 				return null;
 			}
 
-			var id = ProcurarIdDaObraPorTituloERemoveOutrosResultados(search, titulo);
+			var id = ProcurarIdDaObraPorTitulo(search, titulo);
 			
 			if (string.IsNullOrEmpty(id))
 			{
@@ -60,16 +61,19 @@ namespace ScrollsTracker.Infra.Sources
 
 			return new Obra
 			{
-				Titulo = titulo,
-				Descricao = infoObra!.Description["en"],
+				Titulo = infoObra!.Title["en"],
+				Descricao = infoObra!.Description["en"].Replace("\n", ""),
 				Status = infoObra.Status,
 				TotalCapitulos = int.Parse(capitulos.Data.FirstOrDefault()!.Attributes!.Chapters),
 				Imagem = cover is not null ? MontarFileName(cover.Data.FirstOrDefault()!.Attributes!.FileName, id) : "",
 			};
 		}
 
-		private string ProcurarIdDaObraPorTituloERemoveOutrosResultados(BaseMangaDexSearchResponse search, string titulo)
+		private string ProcurarIdDaObraPorTitulo(BaseMangaDexSearchResponse search, string titulo)
 		{
+			var melhorPesquisa = search.Data!.FirstOrDefault()!.Id;
+			var melhorPontuacao = 80;
+
 			foreach (var item in search.Data!) 
 			{
 				if(item.Attributes is null)
@@ -78,15 +82,21 @@ namespace ScrollsTracker.Infra.Sources
 				}
 
 				item.Attributes.Title.TryGetValue("en" as string, out var title);
-				if (title != null && title.Trim().Equals(titulo.Trim(), StringComparison.OrdinalIgnoreCase))
+				if (title is null)
 				{
-					return item.Id;
+					continue;
 				}
 
-				search.Data.Remove(item);
+				int similaridade = Fuzz.Ratio(title, titulo);
+				
+				if (similaridade >= melhorPontuacao)
+				{
+					melhorPontuacao = similaridade;
+					melhorPesquisa = item.Id;
+				}
 			}
 
-			return "";
+			return melhorPesquisa;
 		}
 
 		private string MontarFileName(string fileName, string id)
@@ -96,8 +106,9 @@ namespace ScrollsTracker.Infra.Sources
 
 		public async Task<MangaDexCoverResponse?> ObterCoverFileNameAsync(string mangaId)
 		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 			var url = $"https://api.mangadex.org/cover?manga[]={mangaId}";
-			var response = await _httpClient.GetAsync(url);
+			var response = await _httpClient.GetAsync(url, cts.Token);
 
 			if (!response.IsSuccessStatusCode)
 			{
@@ -111,8 +122,9 @@ namespace ScrollsTracker.Infra.Sources
 
 		public async Task<BaseMangaDexChapterResponse?> ObterCapitulosAsync(string mangaId)
 		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 			var url = $"https://api.mangadex.org/manga/{mangaId}/feed?limit=1&order[chapter]=desc";
-			var response = await _httpClient.GetAsync(url);
+			var response = await _httpClient.GetAsync(url, cts.Token);
 
 			if (!response.IsSuccessStatusCode)
 			{
@@ -127,9 +139,10 @@ namespace ScrollsTracker.Infra.Sources
 
 		public async Task<BaseMangaDexSearchResponse?> BuscarMangasPorTituloAsync(string titulo)
 		{
+			using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 			var encodedTitle = Uri.EscapeDataString(titulo);
 			var url = $"https://api.mangadex.org/manga?title={encodedTitle}&limit=3";
-			var response = await _httpClient.GetAsync(url);
+			var response = await _httpClient.GetAsync(url, cts.Token);
 
 			if (!response.IsSuccessStatusCode)
 			{

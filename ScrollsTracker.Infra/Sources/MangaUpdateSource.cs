@@ -1,4 +1,5 @@
-﻿using ScrollsTracker.Domain.Enum;
+﻿using FuzzySharp;
+using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate;
@@ -25,7 +26,8 @@ namespace ScrollsTracker.Infra.Sources
 				return null;
 			}
 
-			var result = search?.Results.FirstOrDefault();
+			var result = FiltrarResultados(search.Results, titulo);
+
 			if (result == null || result.Record == null)
 			{
 				return null;
@@ -34,6 +36,29 @@ namespace ScrollsTracker.Infra.Sources
 			var serie = await ObterObraPorIdAsync(result.Record.SeriesId);
 
 			return serie?.ToDomain();
+		}
+
+		private MangaUpdateResultsResponse? FiltrarResultados(IList<MangaUpdateResultsResponse> results, string titulo)
+		{
+			var melhorPesquisa = results.FirstOrDefault();
+			int melhorPontuacao = 85;
+
+			foreach (var result in results)
+			{
+				if (result.Record == null || result.Record.SeriesId == 0)
+				{
+					continue;
+				}
+
+				int pontuacao = Fuzz.Ratio(result.Record.Title, titulo);
+				if (result.Record.Title != null && pontuacao >= melhorPontuacao)
+				{
+					melhorPontuacao = pontuacao;
+					melhorPesquisa = result;
+				}
+			}
+
+			return melhorPesquisa ?? null;
 		}
 
 		private async Task<MangaUpdateSeriesResponse?> ObterObraPorIdAsync(long id)

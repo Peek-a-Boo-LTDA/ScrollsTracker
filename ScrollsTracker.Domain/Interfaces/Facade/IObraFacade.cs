@@ -7,7 +7,8 @@ namespace ScrollsTracker.Domain.Interfaces.Facade
 		Task<List<Obra>> ObterTodasObrasAsync();
 		Task<List<Obra>> ObterLancamentosAsync();
 		Task<Obra?> GetObraByIdAsync(int id);
-		Task<int> UpdateObra(Obra obra);
+		Task<int> CadastrarObraAsync(Obra obra);
+		Task<int> UpdateObraAsync(Obra obra);
 		Task<int> DeleteObraById(int id);
 		Task<Obra> BuscarObraAgregadaAsync(string titulo);
 	}

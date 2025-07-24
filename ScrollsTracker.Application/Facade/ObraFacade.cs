@@ -26,6 +26,8 @@ namespace ScrollsTracker.Application.Facade
 
 		public Task<List<Obra>> ObterTodasObrasAsync() => _repo.ObterTodasObrasAsync();
 
-		public Task<int> UpdateObra(Obra obra) => _repo.UpdateObraAsync(obra);
+		public Task<int> UpdateObraAsync(Obra obra) => _repo.UpdateObraAsync(obra);
+
+		public Task<int> CadastrarObraAsync(Obra obra) => _repo.CadastrarObraAsync(obra);
 	}
 }

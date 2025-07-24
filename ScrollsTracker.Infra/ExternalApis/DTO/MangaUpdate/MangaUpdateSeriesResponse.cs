@@ -31,7 +31,7 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate
 			return new Obra
 			{
 				Titulo = Title ?? string.Empty,
-				Descricao = Description ?? string.Empty,
+				Descricao = Description is null ? string.Empty : Description.Replace("\n", ""),
 				Imagem = Image.Url.Original ?? string.Empty,
 				TotalCapitulos = LatestChapter,
 				Status = Status ?? string.Empty

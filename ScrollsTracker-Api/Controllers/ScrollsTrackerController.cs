@@ -29,14 +29,13 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(await _obraFacade.ObterTodasObrasAsync());
         }
 
-		// Ta aqui só por conveniencia
 		[HttpGet("ProcurarObraNasApisExternas")]
 		public async Task<IActionResult> ProcurarObraApisExternasAsync(string titulo)
 		{
 			return Ok(await _obraFacade.BuscarObraAgregadaAsync(titulo));
 		}
 
-		[HttpGet("ObterObra")]
+		[HttpGet("ObterObra/{id}")]
 		public async Task<IActionResult> GetObraByIdAsync(int id)
 		{
 			return Ok(await _obraFacade.GetObraByIdAsync(id));
@@ -48,14 +47,30 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(await _obraFacade.ObterLancamentosAsync());
 		}
 
+		[HttpPost("ProcurarECadastrarObra")]
+		public async Task<IActionResult> ProcurarECadastrarObraAsync([FromBody] ProcurarECadastrarObraCommand command)
+		{
+			try
+			{
+				var obraId = await _mediator.Send(command);
+
+				return Created(nameof(ProcurarECadastrarObraAsync), obraId);
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+
 		[HttpPost("CadastrarObra")]
-        public async Task<IActionResult> ProcurarECadastrarObraAsync([FromBody] ProcurarECadastrarObraCommand command)
+        public async Task<IActionResult> CadastrarObraAsync([FromBody] ObraRequest obraRequest)
         {
             try
             {
-                var obraId = await _mediator.Send(command);
+				var obra = _mapper.Map<Obra>(obraRequest);
+				var result = await _obraFacade.CadastrarObraAsync(obra);
 
-                return Created(nameof(ProcurarECadastrarObraAsync), obraId);
+				return Created(nameof(CadastrarObraAsync), result);
             }
             catch (Exception ex)
             {
@@ -63,13 +78,13 @@ namespace ScrollsTracker.Api.Controllers
             }
         }
 
-		[HttpPost("AtualizarObra")]
+		[HttpPut("AtualizarObra")]
 		public async Task<IActionResult> AtualizarObraAsync([FromBody] ObraRequest obraRequest)
 		{
 			try
 			{
 				var obra = _mapper.Map<Obra>(obraRequest);
-				var result = await _obraFacade.UpdateObra(obra);
+				var result = await _obraFacade.UpdateObraAsync(obra);
 
 				return Ok(result);
 			}
@@ -79,7 +94,7 @@ namespace ScrollsTracker.Api.Controllers
 			}
 		}
 
-		[HttpDelete("DeletarObra")]
+		[HttpDelete("DeletarObra/{id}")]
 		public async Task<IActionResult> DeletarObraAsync(int id)
 		{
 			try

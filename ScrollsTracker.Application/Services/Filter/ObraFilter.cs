@@ -79,7 +79,7 @@ namespace ScrollsTracker.Application.Services.Filter
 
 		private void FiltrarTitulo(Obra obra, EnumSources origem)
 		{
-			if (string.IsNullOrEmpty(_obra.Titulo) || origem == EnumSources.MangaUpdate)
+			if (string.IsNullOrEmpty(_obra.Titulo) || origem == EnumSources.MangaDex)
 			{
 				_obra.Titulo = obra.Titulo;
 			}
