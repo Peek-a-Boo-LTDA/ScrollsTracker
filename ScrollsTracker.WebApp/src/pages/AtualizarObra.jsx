@@ -52,7 +52,7 @@ function AtualizarObra() {
     mutationFn: atualizarObraApi,
     onSuccess: () => {
       alert("Obra atualizada com sucesso!");
-      navigate("/");
+      navigate("/biblioteca");
     },
     onError: (error) => alert(error.message),
   });
