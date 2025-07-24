@@ -3,6 +3,7 @@
     public enum EnumSources
     {
 		MangaDex,
-		MangaUpdate
+		MangaUpdate,
+		MangaKatana,
 	}
 }

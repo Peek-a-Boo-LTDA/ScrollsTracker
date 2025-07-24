@@ -27,7 +27,7 @@ namespace ScrollsTracker.Infra.Sources
 			}
 
 			var result = FiltrarResultados(search.Results, titulo);
-			//var result = search?.Results.FirstOrDefault();
+
 			if (result == null || result.Record == null)
 			{
 				return null;

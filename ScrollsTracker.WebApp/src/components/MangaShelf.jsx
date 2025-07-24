@@ -10,7 +10,11 @@ function MangaShelf(props) {
           titulo={obra.titulo}
           descricao={obra.descricao}
           imagem={obra.imagem}
-          ultimoCapitulo={obra.totalCapitulos}
+          totalCapitulos={obra.totalCapitulos}
+          ultimoCapituloLido={obra.ultimoCapituloLido}
+          status={obra.status}
+          statusLeitura={obra.statusLeitura}
+          dataAtualizacao={obra.dataAtualizacao}
           key={obra.id}
         />
       ))}

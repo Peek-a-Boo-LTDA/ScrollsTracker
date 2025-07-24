@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using ScrollsTracker.Application.Services.Filter;
+using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 
