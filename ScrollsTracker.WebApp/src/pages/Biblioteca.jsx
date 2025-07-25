@@ -18,7 +18,7 @@ function Biblioteca() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       <div className="flex justify-between items-center pl-2 pr-2 mb-1 pt-4">
         <h1 className="text-white">Biblioteca</h1>
         <Link

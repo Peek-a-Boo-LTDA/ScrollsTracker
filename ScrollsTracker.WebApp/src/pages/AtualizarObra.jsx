@@ -82,7 +82,7 @@ function AtualizarObra() {
       }}
     >
       <div
-        className="min-h-screen min-w-screen flex flex-col items-center justify-center border border-white/20 
+        className="min-h-full min-w-full flex flex-col items-center justify-center border border-white/20 
           shadow-lg
           bg-black/50 
           backdrop-blur-lg 
