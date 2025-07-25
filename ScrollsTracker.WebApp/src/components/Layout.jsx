@@ -5,7 +5,7 @@ function Layout() {
   return (
     <div>
       <Navbar />
-      <main className="p-4 bg-stone-900">
+      <main className="bg-stone-900">
         {/* O conteúdo da página específica da rota será renderizado aqui */}
         <Outlet />
       </main>

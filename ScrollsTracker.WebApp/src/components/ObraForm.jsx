@@ -18,7 +18,9 @@ function ObraForm({
     reset,
     getValues,
     watch,
+    trigger,
   } = useForm({
+    mode: "onChange",
     defaultValues: initialData || {
       titulo: "",
       descricao: "",
@@ -46,6 +48,12 @@ function ObraForm({
 
   const imageUrl = watch("imagem");
   const tituloValue = watch("titulo");
+  const totalCapitulosValue = watch("totalCapitulos");
+
+  useEffect(() => {
+    // 3. Sempre que 'totalCapitulos' mudar, dispare a validação de 'ultimoCapituloLido'
+    trigger("ultimoCapituloLido");
+  }, [totalCapitulosValue, trigger]);
 
   const { mutate: procurarObra, isPending: isProcurando } = useMutation({
     mutationFn: procurarObraApi,
@@ -71,10 +79,10 @@ function ObraForm({
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-3xl bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700"
+        className="w-full max-w-3x1 bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700"
       >
         <div className="flex justify-center mb-4 gap-4">
           {imageUrl && (
@@ -82,7 +90,7 @@ function ObraForm({
               <img
                 src={imageUrl}
                 alt="Pré-visualização da capa"
-                className="object-cover rounded-md border-2 border-gray-600"
+                className="w-4xs h-110 object-cover rounded-md border-2 border-gray-600"
                 onError={(e) => {
                   e.target.style.display = "none";
                 }}
@@ -230,6 +238,14 @@ function ObraForm({
                     min: {
                       value: 0,
                       message: "O valor não pode ser negativo.",
+                    },
+                    validate: (value) => {
+                      if (!totalCapitulosValue || isNaN(totalCapitulosValue))
+                        return true;
+                      return (
+                        parseInt(value) <= parseInt(totalCapitulosValue) ||
+                        "Não pode ser maior que o total de capítulos."
+                      );
                     },
                   })}
                 />

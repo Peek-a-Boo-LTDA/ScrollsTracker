@@ -8,7 +8,8 @@ const buscarObraPorIdApi = async (id) => {
     `https://localhost:7071/api/ScrollsTracker/ObterObra/${id}`
   );
   if (!response.ok) throw new Error("Obra não encontrada");
-  return response.json();
+  var resposta = await response.json();
+  return resposta;
 };
 
 const atualizarObraApi = async (data) => {
@@ -35,6 +36,8 @@ function AtualizarObra() {
     queryKey: ["obra", id], // A chave da query inclui o ID
     queryFn: () => buscarObraPorIdApi(id),
   });
+
+  var imageUrl = obraData?.imagem ? obraData.imagem : "";
 
   const deletarObraApi = async () => {
     const response = await fetch(
@@ -72,17 +75,31 @@ function AtualizarObra() {
     return <div className="text-red-500">Erro ao carregar os dados.</div>;
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
-      <h2 className="text-3xl font-bold text-white mb-6">Editar Obra</h2>
-      <ObraForm
-        initialData={obraData}
-        onSubmit={atualizarObra}
-        isSubmitting={isUpdating}
-        submitButtonText="Salvar Alterações"
-        Type={"Atualizar"}
-        onDelete={deletarObra}
-        isDeleting={isDeleting}
-      />
+    <div
+      className="min-h-screen flex flex-col items-center justify-center bg-no-repeat bg-cover "
+      style={{
+        backgroundImage: `url(${imageUrl})`,
+      }}
+    >
+      <div
+        className="min-h-screen min-w-screen flex flex-col items-center justify-center border border-white/20 
+          shadow-lg
+          bg-black/50 
+          backdrop-blur-lg 
+          text-white
+          pt-4"
+      >
+        <h2 className="text-3xl font-bold text-white mb-6">Editar Obra</h2>
+        <ObraForm
+          initialData={obraData}
+          onSubmit={atualizarObra}
+          isSubmitting={isUpdating}
+          submitButtonText="Salvar Alterações"
+          Type={"Atualizar"}
+          onDelete={deletarObra}
+          isDeleting={isDeleting}
+        />
+      </div>
     </div>
   );
 }
