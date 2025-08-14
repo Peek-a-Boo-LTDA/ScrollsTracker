@@ -1,9 +1,12 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import ObraForm from "../components/ObraForm";
+import { useState } from "react";
+import Modal from "../components/Modal";
 
 function CadastrarObra() {
   const navigate = useNavigate();
+  let model;
 
   const cadastrarObraApi = async (data) => {
     const response = await fetch(
@@ -24,8 +27,7 @@ function CadastrarObra() {
     mutationFn: cadastrarObraApi,
     onSuccess: (data) => {
       console.log("Resposta do servidor:", data);
-      alert("Obra cadastrada com sucesso!");
-      navigate("/biblioteca");
+      setIsOpenCadastrar(true);
       // Poderia adicionar uma notificação de sucesso aqui (ex: react-toastify)
     },
     onError: (error) => {
@@ -33,6 +35,8 @@ function CadastrarObra() {
       alert(error.message);
     },
   });
+
+  const [isOpenCadastrar, setIsOpenCadastrar] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -45,6 +49,19 @@ function CadastrarObra() {
         submitButtonText="Cadastrar Obra"
         Type="Cadastrar"
       />
+      <Modal isOpen={isOpenCadastrar} onClose={() => setIsOpenCadastrar(false)}>
+        <p className="text-lg font-semibold text-gray-800 mb-4">
+          Atualizado com sucesso
+        </p>
+        <button
+          onClick={() => {
+            navigate("/biblioteca");
+          }}
+          className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+        >
+          OK
+        </button>
+      </Modal>
     </div>
   );
 }

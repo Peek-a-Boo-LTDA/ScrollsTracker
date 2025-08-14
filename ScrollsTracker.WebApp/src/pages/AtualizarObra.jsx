@@ -1,6 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 import ObraForm from "../components/ObraForm";
+import Modal from "../components/Modal";
 
 // Funções da API
 const buscarObraPorIdApi = async (id) => {
@@ -54,8 +56,7 @@ function AtualizarObra() {
   const { mutate: atualizarObra, isPending: isUpdating } = useMutation({
     mutationFn: atualizarObraApi,
     onSuccess: () => {
-      alert("Obra atualizada com sucesso!");
-      navigate("/biblioteca");
+      setIsOpenAtualizar(true);
     },
     onError: (error) => alert(error.message),
   });
@@ -63,11 +64,13 @@ function AtualizarObra() {
   const { mutate: deletarObra, isPending: isDeleting } = useMutation({
     mutationFn: deletarObraApi,
     onSuccess: () => {
-      alert("Obra deletada com sucesso!");
       navigate("/");
     },
     onError: (error) => alert(error.message),
   });
+
+  const [isOpenAtualizar, setIsOpenAtualizar] = useState(false);
+  const [isOpenDeletar, setIsOpenDeletar] = useState(false);
 
   if (isLoading)
     return <div className="text-white">Carregando dados da obra...</div>;
@@ -90,13 +93,57 @@ function AtualizarObra() {
           pt-4"
       >
         <h2 className="text-3xl font-bold text-white mb-6">Editar Obra</h2>
+        <button onClick={() => setIsOpenDeletar(true)}>Abrir Modal</button>
+        <Modal
+          isOpen={isOpenAtualizar}
+          onClose={() => setIsOpenAtualizar(false)}
+        >
+          <p className="text-lg font-semibold text-gray-800 mb-4">
+            Atualizado com sucesso
+          </p>
+          <button
+            onClick={() => {
+              setIsOpenAtualizar(false);
+              navigate("/biblioteca");
+            }}
+            className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          >
+            OK
+          </button>
+        </Modal>
+        <Modal isOpen={isOpenDeletar} onClose={() => setIsOpenDeletar(false)}>
+          <p className="text-xl font-bold text-red-600 mb-4">
+            Tem certeza que deseja deletar?
+          </p>
+          <p className="text-gray-700 mb-6">Essa ação não pode ser desfeita.</p>
+          <div className="flex space-x-4">
+            {/* Botão de confirmação de deleção */}
+            <button
+              onClick={() => {
+                deletarObra(id);
+                setIsOpenDeletar(false);
+              }}
+              className="bg-red-500 text-white font-bold py-2 px-6 rounded-md hover:bg-red-600 transition-colors"
+            >
+              Sim, deletar
+            </button>
+
+            {/* Botão de cancelamento */}
+            <button
+              onClick={() => setIsOpenDeletar(false)}
+              className="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-md hover:bg-gray-400 transition-colors"
+            >
+              Cancelar
+            </button>
+          </div>
+        </Modal>
         <ObraForm
           initialData={obraData}
           onSubmit={atualizarObra}
           isSubmitting={isUpdating}
           submitButtonText="Salvar Alterações"
           Type={"Atualizar"}
-          onDelete={deletarObra}
+          onDelete={setIsOpenDeletar}
           isDeleting={isDeleting}
         />
       </div>
