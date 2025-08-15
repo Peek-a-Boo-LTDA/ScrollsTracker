@@ -79,12 +79,12 @@ function ObraForm({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen w-4xl flex items-center justify-center p-4">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full max-w-3x1 bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700"
+        className="w-full bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700"
       >
-        <div className="flex justify-center mb-4 gap-4">
+        <div className="flex justify-center mb-4 gap-4 w-full">
           {imageUrl && (
             <div className="mt-4">
               <img
@@ -97,7 +97,7 @@ function ObraForm({
               />
             </div>
           )}
-          <div className="grid grid-cols-1 gap-6">
+          <div className="grid grid-cols-1 gap-6 w-xl">
             <button
               type="button"
               onClick={handleProcurarClick}
@@ -126,7 +126,7 @@ function ObraForm({
                 {...register("titulo", { required: "O título é obrigatório." })}
               />
               {errors.titulo && (
-                <p className="mt-1 text-xs text-red-400">
+                <p className="mt-1 w-full text-xs text-red-400">
                   {errors.titulo.message}
                 </p>
               )}
@@ -217,7 +217,7 @@ function ObraForm({
               </div>
 
               {/* Campo Último Capítulo Lido */}
-              <div>
+              <div className="h-18">
                 <label
                   htmlFor="ultimoCapituloLido"
                   className="block text-sm font-medium text-gray-300 mb-1"

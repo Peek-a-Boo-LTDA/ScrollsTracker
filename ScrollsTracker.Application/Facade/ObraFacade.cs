@@ -32,5 +32,6 @@ namespace ScrollsTracker.Application.Facade
 		}
 
 		public Task<int> CadastrarObraAsync(Obra obra) => _repo.CadastrarObraAsync(obra);
+		public Task<int> CadastrarObrasAsync(List<Obra> obras) => _repo.CadastrarObrasAsync(obras);
 	}
 }

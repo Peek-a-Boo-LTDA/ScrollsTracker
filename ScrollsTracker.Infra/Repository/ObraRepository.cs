@@ -52,6 +52,13 @@ namespace ScrollsTracker.Api.Repository
 			return await _context.SaveChangesAsync();
 		}
 
+		public async Task<int> CadastrarObrasAsync(List<Obra> obras)
+		{
+			await _context.Obras.AddRangeAsync(obras);
+
+			return await _context.SaveChangesAsync();
+		}
+
 		public async Task<List<Obra>> ObterTodasObrasAsync()
 		{
 			return await _context.Obras.ToListAsync();

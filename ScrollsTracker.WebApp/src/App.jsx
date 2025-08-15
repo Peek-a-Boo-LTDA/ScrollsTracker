@@ -4,6 +4,7 @@ import Biblioteca from "./pages/Biblioteca";
 import Home from "./pages/Home";
 import CadastrarObra from "./pages/CadastrarObra";
 import AtualizarObra from "./pages/AtualizarObra";
+import ImportarObra from "./pages/ImportarObras";
 
 const router = createBrowserRouter([
   {
@@ -24,6 +25,10 @@ const router = createBrowserRouter([
       {
         path: "/atualizar-obra/:id",
         element: <AtualizarObra />,
+      },
+      {
+        path: "/importar",
+        element: <ImportarObra />,
       },
     ],
   },

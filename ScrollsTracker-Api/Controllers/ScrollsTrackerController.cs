@@ -109,6 +109,27 @@ namespace ScrollsTracker.Api.Controllers
 			}
 		}
 
+		[HttpGet("exportar-obras")]
+		public async Task<IActionResult> DownloadJsonFileAsync()
+		{
+			var obras = await _obraFacade.ObterTodasObrasAsync();
+			string jsonContent = System.Text.Json.JsonSerializer.Serialize(obras);
+
+			byte[] fileBytes = System.Text.Encoding.UTF8.GetBytes(jsonContent);
+
+			string fileName = "obras.json";
+
+			return File(fileBytes, "application/json", fileName);
+		}
+
+		[HttpPost("importar-obras")]
+		public async Task<IActionResult> ImportJsonFileAsync([FromBody] List<ObraRequest> obraRequest)
+		{
+			var obras = _mapper.Map<List<Obra>>(obraRequest);
+			var result = await _obraFacade.CadastrarObrasAsync(obras);
+			return Ok(result);
+		}
+
 		// TODO: Refatorar?
 		[Obsolete]
 		[HttpGet("imagens/{nomeArquivo}")]

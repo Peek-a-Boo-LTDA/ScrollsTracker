@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { XCircleIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import ObraForm from "../components/ObraForm";
 import Modal from "../components/Modal";
@@ -58,7 +59,10 @@ function AtualizarObra() {
     onSuccess: () => {
       setIsOpenAtualizar(true);
     },
-    onError: (error) => alert(error.message),
+    onError: (error) => {
+      setIsOpenError(true);
+      console.log(error);
+    },
   });
 
   const { mutate: deletarObra, isPending: isDeleting } = useMutation({
@@ -66,11 +70,15 @@ function AtualizarObra() {
     onSuccess: () => {
       navigate("/");
     },
-    onError: (error) => alert(error.message),
+    onError: (error) => {
+      setIsOpenError(true);
+      console.log(error);
+    },
   });
 
   const [isOpenAtualizar, setIsOpenAtualizar] = useState(false);
   const [isOpenDeletar, setIsOpenDeletar] = useState(false);
+  const [isOpenError, setIsOpenError] = useState(false);
 
   if (isLoading)
     return <div className="text-white">Carregando dados da obra...</div>;
@@ -93,11 +101,11 @@ function AtualizarObra() {
           pt-4"
       >
         <h2 className="text-3xl font-bold text-white mb-6">Editar Obra</h2>
-        <button onClick={() => setIsOpenDeletar(true)}>Abrir Modal</button>
         <Modal
           isOpen={isOpenAtualizar}
           onClose={() => setIsOpenAtualizar(false)}
         >
+          <CheckCircleIcon className="h-16 w-16 text-green-500 mb-4" />
           <p className="text-lg font-semibold text-gray-800 mb-4">
             Atualizado com sucesso
           </p>
@@ -106,6 +114,25 @@ function AtualizarObra() {
               setIsOpenAtualizar(false);
               navigate("/biblioteca");
             }}
+            className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          >
+            OK
+          </button>
+        </Modal>
+        <Modal isOpen={isOpenError} onClose={() => setIsOpenError(false)}>
+          <XCircleIcon className="h-16 w-16 text-red-500 mb-4" />
+
+          <p className="text-xl font-bold text-gray-800 mb-4">
+            Falha ao atualizar obra!
+          </p>
+
+          <p className="text-gray-600 mb-6">
+            Ocorreu um erro ao processar sua solicitação. Por favor, tente
+            novamente.
+          </p>
+
+          <button
+            onClick={() => setIsOpenError(false)}
             className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
           >
             OK

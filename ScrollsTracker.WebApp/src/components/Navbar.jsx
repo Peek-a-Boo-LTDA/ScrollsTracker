@@ -8,7 +8,7 @@ import logo from "../assets/logo.png";
 
 function Navbar() {
   return (
-    <header className="bg-orange-400 text-black p-4 border-b-4 border-indigo-500 shadow-md">
+    <header className="bg-gray-200 text-black p-4 border-b-4 border-indigo-500 shadow-md">
       {/* Container para alinhar os itens com margem automática */}
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo (à esquerda) */}
@@ -32,7 +32,7 @@ function Navbar() {
                 to="/"
                 className="text-lg font-medium hover:text-indigo-700 transition-colors"
               >
-                Home
+                Lançamentos
               </Link>
             </li>
             <li>
@@ -41,6 +41,14 @@ function Navbar() {
                 className="text-lg font-medium hover:text-indigo-700 transition-colors"
               >
                 Biblioteca
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/importar"
+                className="text-lg font-medium hover:text-indigo-700 transition-colors"
+              >
+                Importar
               </Link>
             </li>
           </ul>
