@@ -68,7 +68,7 @@ namespace ScrollsTracker.Api.Repository
 		{
 			var obras = await _context.Obras.ToListAsync();
 
-			return obras.Where(obra => (DateTime.Now - obra.DataVerificacao).TotalHours >= 3).ToList();
+			return obras.Where(obra => (DateTime.Now - obra.DataVerificacao).TotalHours >= 1).ToList();
 		}
 
 		public async Task<List<Obra>> ObterLancamentosAsync()

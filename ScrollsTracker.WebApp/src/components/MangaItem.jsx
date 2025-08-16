@@ -38,7 +38,7 @@ function MangaItem(props) {
     ultimoCapituloLido,
     status,
     statusLeitura,
-    dataVerificacao, // Adicionando a data
+    dataAtualizacao,
   } = props;
 
   // 1. Lógica para a Barra de Progresso
@@ -50,7 +50,7 @@ function MangaItem(props) {
 
   // 2. Formatação da Data
   // Converte a string de data para um objeto Date e formata para o padrão local (ex: dd/mm/aaaa)
-  const dataFormatada = new Date(dataVerificacao).toLocaleDateString();
+  const dataFormatada = new Date(dataAtualizacao).toLocaleDateString();
 
   return (
     // O Link agora envolve todo o card para torná-lo clicável
