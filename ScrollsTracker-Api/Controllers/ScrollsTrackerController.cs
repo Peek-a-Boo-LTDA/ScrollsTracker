@@ -78,12 +78,19 @@ namespace ScrollsTracker.Api.Controllers
             }
         }
 
-		[HttpPut("AtualizarObra")]
-		public async Task<IActionResult> AtualizarObraAsync([FromBody] ObraRequest obraRequest)
+		[HttpPut("AtualizarObra/{id}")]
+		public async Task<IActionResult> AtualizarObraAsync(int id, [FromBody] ObraRequest obraRequest)
 		{
 			try
 			{
 				var obra = _mapper.Map<Obra>(obraRequest);
+
+				if (obra == null)
+				{
+					return BadRequest("Obra inválida.");
+				}
+
+				obra.Id = id;
 				var result = await _obraFacade.UpdateObraAsync(obra);
 
 				return Ok(result);

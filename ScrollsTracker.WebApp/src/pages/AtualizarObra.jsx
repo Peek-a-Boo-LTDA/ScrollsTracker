@@ -17,7 +17,7 @@ const buscarObraPorIdApi = async (id) => {
 
 const atualizarObraApi = async (data) => {
   const response = await fetch(
-    `https://localhost:7071/api/ScrollsTracker/AtualizarObra`,
+    `https://localhost:7071/api/ScrollsTracker/AtualizarObra/${data.id}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
