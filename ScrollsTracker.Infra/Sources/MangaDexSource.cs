@@ -57,7 +57,7 @@ namespace ScrollsTracker.Infra.Sources
 				cover = null;
 			}
 
-			var infoObra = search.Data.FirstOrDefault()!.Attributes;
+			var infoObra = search.Data.Where(i => i.Id == id).FirstOrDefault()!.Attributes;
 
 			return new Obra
 			{
@@ -87,7 +87,7 @@ namespace ScrollsTracker.Infra.Sources
 					continue;
 				}
 
-				int similaridade = Fuzz.Ratio(title, titulo);
+				int similaridade = Fuzz.Ratio(title.ToLower(), titulo.ToLower());
 				
 				if (similaridade >= melhorPontuacao)
 				{
