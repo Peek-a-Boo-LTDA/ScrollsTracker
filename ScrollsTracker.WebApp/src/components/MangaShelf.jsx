@@ -14,7 +14,7 @@ function MangaShelf(props) {
           ultimoCapituloLido={obra.ultimoCapituloLido}
           status={obra.status}
           statusLeitura={obra.statusLeitura}
-          dataAtualizacao={obra.dataAtualizacao}
+          dataVerificacao={obra.dataVerificacao}
           key={obra.id}
         />
       ))}

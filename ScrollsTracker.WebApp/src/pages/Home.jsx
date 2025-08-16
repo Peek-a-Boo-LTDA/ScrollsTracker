@@ -19,10 +19,10 @@ function Home() {
   return (
     <div className="space-y-4 h-screen p-4">
       <div>
-        <h1 className="text-white">Bem-vindo ao ScrollsMaster</h1>
+        <h1 className="text-white text-2xl">Bem-vindo ao ScrollsMaster</h1>
       </div>
       <div className="border-b-2 border-white">
-        <h1 className="text-white">Ultimos lançamentos</h1>
+        <h1 className="text-white text-lg">Ultimos lançamentos</h1>
       </div>
       <MangaShelf obras={obras} />
     </div>
