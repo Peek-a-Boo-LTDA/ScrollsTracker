@@ -11,7 +11,11 @@ namespace ScrollsTracker.Infra.Repository.Context
         {
             modelBuilder.Entity<Obra>()
                 .Property(i => i.Id);
-        }
+
+			modelBuilder.Entity<Obra>()
+				.HasIndex(i => i.Titulo)
+                .IsUnique();
+		}
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

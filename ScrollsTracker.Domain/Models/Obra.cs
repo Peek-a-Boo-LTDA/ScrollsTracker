@@ -8,6 +8,8 @@ namespace ScrollsTracker.Domain.Models
 		[Key]
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
+
+		[Required]
 		public string? Titulo { get; set; }
 		public string? Descricao { get; set; }
 		public int TotalCapitulos { get; set; }
