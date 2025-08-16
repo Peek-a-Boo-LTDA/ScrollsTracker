@@ -28,7 +28,7 @@ namespace ScrollsTracker.Application.Services
 					var obraEncontrada = await source.ObterObraAsync(titulo);
 					if (obraEncontrada != null)
 					{
-						obraFilter.Filtrar(obraEncontrada, source.SourceName);
+						obraFilter.Filtrar(obraEncontrada, source.SourceName, true);
 					}
 				}
 				catch (Exception ex)

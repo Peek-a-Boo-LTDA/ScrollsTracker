@@ -5,6 +5,6 @@ namespace ScrollsTracker.Domain.Interfaces
 {
     public interface IObraFilter
     {
-		void Filtrar(Obra obra, EnumSources novaOrigem);
+		void Filtrar(Obra obra, EnumSources novaOrigem, bool obraNova = false);
 	}
 }

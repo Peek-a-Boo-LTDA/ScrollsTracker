@@ -18,13 +18,24 @@ namespace ScrollsTracker.Application.Services.Filter
 			_obra = obra;
 		}
 
-		public void Filtrar(Obra obra, EnumSources origem)
+		public void Filtrar(Obra obra, EnumSources origem, bool obraNova = false)
 		{
-			FiltrarTitulo(obra, origem);
-			FiltrarDescricao(obra, origem);
-			FiltrarTotalCapitulos(obra, origem);
-			FiltrarImagem(obra, origem);
-			FiltrarStatus(obra, origem);
+			if (obraNova)
+			{
+				FiltrarTituloObraNova(obra, origem);
+				FiltrarDescricao(obra, origem);
+				FiltrarTotalCapitulos(obra, origem);
+				FiltrarImagem(obra, origem);
+				FiltrarStatus(obra, origem);
+			}
+			else
+			{
+				FiltrarTitulo(obra, origem);
+				FiltrarDescricao(obra, origem);
+				FiltrarTotalCapitulos(obra, origem);
+				FiltrarImagem(obra, origem);
+				FiltrarStatus(obra, origem);
+			}
 		}
 
 		public Obra ObraFiltrada => _obra;
@@ -71,13 +82,21 @@ namespace ScrollsTracker.Application.Services.Filter
 				_obra.Descricao = obra.Descricao;
 			}
 
-			if (origem == EnumSources.MangaDex && !string.IsNullOrEmpty(obra.Descricao))
-			{
-				_obra.Descricao = obra.Descricao;
-			}
+			//if (origem == EnumSources.MangaUpdate && !string.IsNullOrEmpty(obra.Descricao))
+			//{
+			//	_obra.Descricao = obra.Descricao;
+			//}
 		}
 
 		private void FiltrarTitulo(Obra obra, EnumSources origem)
+		{
+			if (string.IsNullOrEmpty(_obra.Titulo))
+			{
+				_obra.Titulo = obra.Titulo;
+			}
+		}
+
+		private void FiltrarTituloObraNova(Obra obra, EnumSources origem)
 		{
 			if (string.IsNullOrEmpty(_obra.Titulo) || origem == EnumSources.MangaDex)
 			{
