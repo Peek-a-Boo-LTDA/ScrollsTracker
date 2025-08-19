@@ -41,7 +41,7 @@ namespace ScrollsTracker.Infra.Sources
 		private MangaUpdateResultsResponse? FiltrarResultados(IList<MangaUpdateResultsResponse> results, string titulo)
 		{
 			var melhorPesquisa = results.FirstOrDefault();
-			int melhorPontuacao = 85;
+			int melhorPontuacao = 60;
 
 			foreach (var result in results)
 			{
