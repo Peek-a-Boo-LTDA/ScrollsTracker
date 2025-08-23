@@ -37,4 +37,12 @@ app.MapControllers();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+
+// Serve arquivos estáticos (React build)
+app.UseDefaultFiles();   // Procura index.html por padrão
+app.UseStaticFiles();    // Serve arquivos de wwwroot
+
+// Fallback para index.html (rotas SPA)
+app.MapFallbackToFile("index.html");
+
 app.Run();
