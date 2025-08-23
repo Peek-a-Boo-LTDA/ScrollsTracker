@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import MangaShelf from "../components/MangaShelf";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 function Home() {
   const { data: obras = [], isLoading } = useQuery({
     queryKey: ["obras"],
     queryFn: async () => {
-      const res = await fetch(
-        "https://localhost:7071/api/ScrollsTracker/ObterLancamentos"
-      );
+      const res = await fetch(`${baseUrl}/api/ScrollsTracker/ObterLancamentos`);
       return res.json();
     },
   });

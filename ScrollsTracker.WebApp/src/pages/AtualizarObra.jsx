@@ -5,11 +5,11 @@ import { useState } from "react";
 import ObraForm from "../components/ObraForm";
 import Modal from "../components/Modal";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 // Funções da API
 const buscarObraPorIdApi = async (id) => {
-  const response = await fetch(
-    `https://localhost:7071/api/ScrollsTracker/ObterObra/${id}`
-  );
+  const response = await fetch(`${baseUrl}/api/ScrollsTracker/ObterObra/${id}`);
   if (!response.ok) throw new Error("Obra não encontrada");
   var resposta = await response.json();
   return resposta;
@@ -17,7 +17,7 @@ const buscarObraPorIdApi = async (id) => {
 
 const atualizarObraApi = async (data) => {
   const response = await fetch(
-    `https://localhost:7071/api/ScrollsTracker/AtualizarObra/${data.id}`,
+    `${baseUrl}/api/ScrollsTracker/AtualizarObra/${data.id}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ function AtualizarObra() {
 
   const deletarObraApi = async () => {
     const response = await fetch(
-      `https://localhost:7071/api/ScrollsTracker/DeletarObra/${id}`,
+      `${baseUrl}/api/ScrollsTracker/DeletarObra/${id}`,
       {
         method: "DELETE",
       }

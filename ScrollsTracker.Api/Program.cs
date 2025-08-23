@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using ScrollsTracker.Api.AutoMapperProfile;
 using ScrollsTracker.Api.Config;
 using ScrollsTracker.Application.Reference;
+using ScrollsTracker.Infra.Repository.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,9 +31,15 @@ builder.Services.AddMediatR(cfg => {
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+	db.Database.Migrate();
+}
+
 app.UseCors("PermitirFrontend");
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 app.UseSwagger();

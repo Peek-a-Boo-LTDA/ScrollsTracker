@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 function ObraForm({
   initialData,
   onSubmit,
@@ -36,7 +38,7 @@ function ObraForm({
       throw new Error("O título não pode ser vazio.");
     }
     const response = await fetch(
-      `https://localhost:7071/api/ScrollsTracker/ProcurarObraNasApisExternas?titulo=${encodeURIComponent(
+      `${baseUrl}/api/ScrollsTracker/ProcurarObraNasApisExternas?titulo=${encodeURIComponent(
         titulo
       )}`
     );

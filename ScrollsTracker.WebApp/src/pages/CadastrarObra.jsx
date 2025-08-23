@@ -5,13 +5,15 @@ import ObraForm from "../components/ObraForm";
 import { useState } from "react";
 import Modal from "../components/Modal";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 function CadastrarObra() {
   const navigate = useNavigate();
 
   const cadastrarObraApi = async (data) => {
     console.log(JSON.stringify(data));
     const response = await fetch(
-      "https://localhost:7071/api/ScrollsTracker/CadastrarObra",
+      `${baseUrl}/api/ScrollsTracker/CadastrarObra`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

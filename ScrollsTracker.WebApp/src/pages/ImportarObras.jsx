@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 function ImportarObra() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState("");
@@ -31,7 +33,7 @@ function ImportarObra() {
         console.log("Dados importados:", data);
 
         const response = await fetch(
-          "https://localhost:7071/api/ScrollsTracker/importar-obras",
+          `${baseUrl}/api/ScrollsTracker/importar-obras`,
           {
             method: "POST",
             headers: {
@@ -61,7 +63,7 @@ function ImportarObra() {
     try {
       // Busca os dados para exportar da API
       const response = await fetch(
-        "https://localhost:7071/api/ScrollsTracker/exportar-obras"
+        `${baseUrl}/api/ScrollsTracker/exportar-obras`
       );
       if (!response.ok) throw new Error("Erro ao buscar dados");
 
