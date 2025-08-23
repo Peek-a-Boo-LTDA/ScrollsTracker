@@ -33,7 +33,7 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate
 				Titulo = Title ?? string.Empty,
 				Descricao = Description is null ? string.Empty : Description.Replace("\n", ""),
 				Imagem = Image.Url.Original ?? string.Empty,
-				TotalCapitulos = LatestChapter,
+				TotalCapitulos = LatestChapter.ToString(),
 				Status = Status ?? string.Empty
 			};
 		}

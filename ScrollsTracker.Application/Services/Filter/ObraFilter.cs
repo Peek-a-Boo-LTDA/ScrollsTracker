@@ -22,7 +22,7 @@ namespace ScrollsTracker.Application.Services.Filter
 		{
 			if (obraNova)
 			{
-				FiltrarTituloObraNova(obra, origem);
+				//FiltrarTituloObraNova(obra, origem);
 				FiltrarDescricao(obra, origem);
 				FiltrarTotalCapitulos(obra, origem);
 				FiltrarImagem(obra, origem);
@@ -30,7 +30,7 @@ namespace ScrollsTracker.Application.Services.Filter
 			}
 			else
 			{
-				FiltrarTitulo(obra, origem);
+				//FiltrarTitulo(obra, origem);
 				FiltrarDescricao(obra, origem);
 				FiltrarTotalCapitulos(obra, origem);
 				FiltrarImagem(obra, origem);
@@ -68,7 +68,7 @@ namespace ScrollsTracker.Application.Services.Filter
 
 		private void FiltrarTotalCapitulos(Obra obra, EnumSources origem)
 		{
-			if (_obra.TotalCapitulos == 0 || obra.TotalCapitulos > _obra.TotalCapitulos)
+			if (_obra.GetTotalCapitulosAsDouble() == 0 || obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
 			{
 				_obra.TotalCapitulos = obra.TotalCapitulos;
 				_obra.DataAtualizacao = DateTime.Now;
@@ -98,7 +98,7 @@ namespace ScrollsTracker.Application.Services.Filter
 
 		private void FiltrarTituloObraNova(Obra obra, EnumSources origem)
 		{
-			if (string.IsNullOrEmpty(_obra.Titulo) || origem == EnumSources.MangaDex)
+			if (string.IsNullOrEmpty(_obra.Titulo) || origem == EnumSources.MangaUpdate)
 			{
 				_obra.Titulo = obra.Titulo;
 			}

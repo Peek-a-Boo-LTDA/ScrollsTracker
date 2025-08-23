@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -16,17 +17,26 @@ namespace ScrollsTracker.Infra.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Titulo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Titulo = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Descricao = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    TotalCapitulos = table.Column<int>(type: "int", nullable: false),
-                    UltimoCapituloLido = table.Column<int>(type: "int", nullable: false),
+                    TotalCapitulos = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UltimoCapituloLido = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Imagem = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    StatusLeitura = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DataAtualizacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DataVerificacao = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Obras", x => x.Id);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Obras_Titulo",
+                table: "Obras",
+                column: "Titulo",
+                unique: true);
         }
 
         /// <inheritdoc />

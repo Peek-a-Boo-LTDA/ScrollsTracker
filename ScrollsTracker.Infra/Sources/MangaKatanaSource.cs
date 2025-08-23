@@ -60,17 +60,17 @@ namespace ScrollsTracker.Infra.Sources
 			int indice = ProcurarMelhorIndiceDaObraPorTitulo(pesquisaHtml, titulo, out var melhorTitulo);
 			var capitulos = ObterCapitulos(pesquisaHtml[indice], indice);
 
-			return new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos };
+			return new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString() };
 		}
 
-		private int ObterCapitulos(IElement document, int indice)
+		private string ObterCapitulos(IElement document, int indice)
 		{
 			var stringCapitulos = document.QuerySelector(".chapter")!
 				.GetElementsByTagName("a")
 				.FirstOrDefault()!
 				.InnerHtml;
 
-			return int.Parse(StringUtils.ManterApenasNumeros(stringCapitulos));
+			return StringUtils.ManterApenasNumeros(stringCapitulos);
 		}
 
 		private int ProcurarMelhorIndiceDaObraPorTitulo(IHtmlCollection<IElement> obras, string titulo, out string melhorTitulo)

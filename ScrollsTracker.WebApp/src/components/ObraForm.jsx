@@ -195,8 +195,10 @@ function ObraForm({
                   Total de Capítulos
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   id="totalCapitulos"
+                  step="any"
+                  pattern="[0-9]*[.]?[0-9]*"
                   className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
                     errors.totalCapitulos ? "border-red-500" : "border-gray-600"
                   }`}
@@ -225,8 +227,10 @@ function ObraForm({
                   Último Capítulo Lido
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   id="ultimoCapituloLido"
+                  step="any"
+                  pattern="[0-9]*[.]?[0-9]*"
                   className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
                     errors.ultimoCapituloLido
                       ? "border-red-500"

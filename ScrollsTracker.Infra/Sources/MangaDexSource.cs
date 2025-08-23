@@ -64,7 +64,7 @@ namespace ScrollsTracker.Infra.Sources
 				Titulo = infoObra!.Title["en"],
 				Descricao = infoObra!.Description["en"].Replace("\n", ""),
 				Status = infoObra.Status,
-				TotalCapitulos = int.Parse(capitulos.Data.FirstOrDefault()!.Attributes!.Chapters),
+				TotalCapitulos = capitulos.Data.FirstOrDefault()!.Attributes!.Chapters,
 				Imagem = cover is not null ? MontarFileName(cover.Data.FirstOrDefault()!.Attributes!.FileName, id) : "",
 			};
 		}

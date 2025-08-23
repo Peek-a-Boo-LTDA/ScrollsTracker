@@ -9,6 +9,7 @@ function CadastrarObra() {
   const navigate = useNavigate();
 
   const cadastrarObraApi = async (data) => {
+    console.log(JSON.stringify(data));
     const response = await fetch(
       "https://localhost:7071/api/ScrollsTracker/CadastrarObra",
       {

@@ -52,11 +52,11 @@ namespace ScrollsTracker.Infra.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("TotalCapitulos")
-                        .HasColumnType("int");
+                    b.Property<string>("TotalCapitulos")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UltimoCapituloLido")
-                        .HasColumnType("int");
+                    b.Property<string>("UltimoCapituloLido")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

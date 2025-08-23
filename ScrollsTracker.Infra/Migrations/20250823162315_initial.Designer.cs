@@ -12,8 +12,8 @@ using ScrollsTracker.Infra.Repository.Context;
 namespace ScrollsTracker.Infra.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250718174225_DataVerificacao")]
-    partial class DataVerificacao
+    [Migration("20250823162315_initial")]
+    partial class initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -48,16 +48,23 @@ namespace ScrollsTracker.Infra.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Titulo")
+                    b.Property<string>("StatusLeitura")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("TotalCapitulos")
-                        .HasColumnType("int");
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("UltimoCapituloLido")
-                        .HasColumnType("int");
+                    b.Property<string>("TotalCapitulos")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UltimoCapituloLido")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Titulo")
+                        .IsUnique();
 
                     b.ToTable("Obras");
                 });

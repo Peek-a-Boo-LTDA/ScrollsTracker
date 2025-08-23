@@ -12,12 +12,38 @@ namespace ScrollsTracker.Domain.Models
 		[Required]
 		public string? Titulo { get; set; }
 		public string? Descricao { get; set; }
-		public int TotalCapitulos { get; set; }
-		public int UltimoCapituloLido { get; set; }
+		public string? TotalCapitulos { get; set; }
+		public string? UltimoCapituloLido { get; set; }
 		public string? Imagem { get; set; }
 		public string? Status { get; set; }
 		public string? StatusLeitura { get; set; }
 		public DateTime DataAtualizacao { get; set; } = DateTime.Now;
 		public DateTime DataVerificacao { get; set; } = DateTime.Now;
+
+		public double GetTotalCapitulosAsDouble()
+		{
+			if (string.IsNullOrEmpty(TotalCapitulos))
+			{
+				return 0;
+			}
+			if (double.TryParse(TotalCapitulos, out double result))
+			{
+				return result;
+			}
+			return 0;
+		}
+
+		public double GetUltimoCapituloLidoAsDouble()
+		{
+			if (string.IsNullOrEmpty(UltimoCapituloLido))
+			{
+				return 0;
+			}
+			if (double.TryParse(UltimoCapituloLido, out double result))
+			{
+				return result;
+			}
+			return 0;
+		}
 	}
 }

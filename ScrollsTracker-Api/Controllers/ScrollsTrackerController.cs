@@ -137,6 +137,23 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(result);
 		}
 
+		[HttpPost("atualizar-obras")]
+		public async Task<IActionResult> AtualizarObrasAsync()
+		{
+			var command = new AtualizarObrasCommand();
+
+			try
+			{
+				await _mediator.Send(command);
+
+				return Ok();
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.ToString());
+			}
+		}
+
 		// TODO: Refatorar?
 		[Obsolete]
 		[HttpGet("imagens/{nomeArquivo}")]
