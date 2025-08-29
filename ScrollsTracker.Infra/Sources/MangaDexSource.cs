@@ -5,6 +5,7 @@ using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Chapter;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Cover;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Search;
+using ScrollsTracker.Infra.Model;
 using System.Text.Json;
 
 namespace ScrollsTracker.Infra.Sources
@@ -23,7 +24,7 @@ namespace ScrollsTracker.Infra.Sources
 			}
 		}
 
-		public async Task<Obra?> ObterObraAsync(string titulo)
+		public async Task<SearchResult?> ObterObraAsync(string titulo)
 		{
 			var search = await BuscarMangasPorTituloAsync(titulo);
 			if (search == null || search.Data is null 
@@ -34,7 +35,8 @@ namespace ScrollsTracker.Infra.Sources
 				return null;
 			}
 
-			var id = ProcurarIdDaObraPorTitulo(search, titulo);
+			var scrore = 0;
+			var id = ProcurarIdDaObraPorTitulo(search, titulo, out scrore);
 			
 			if (string.IsNullOrEmpty(id))
 			{
@@ -59,7 +61,7 @@ namespace ScrollsTracker.Infra.Sources
 
 			var infoObra = search.Data.Where(i => i.Id == id).FirstOrDefault()!.Attributes;
 
-			return new Obra
+			var obra = new Obra
 			{
 				Titulo = infoObra!.Title["en"],
 				Descricao = infoObra!.Description["en"].Replace("\n", ""),
@@ -67,12 +69,14 @@ namespace ScrollsTracker.Infra.Sources
 				TotalCapitulos = capitulos.Data.FirstOrDefault()!.Attributes!.Chapters,
 				Imagem = cover is not null ? MontarFileName(cover.Data.FirstOrDefault()!.Attributes!.FileName, id) : "",
 			};
+
+			return new SearchResult(obra, scrore, SourceName);
 		}
 
-		private string ProcurarIdDaObraPorTitulo(BaseMangaDexSearchResponse search, string titulo)
+		private string ProcurarIdDaObraPorTitulo(BaseMangaDexSearchResponse search, string titulo, out int score)
 		{
 			var melhorPesquisa = search.Data!.FirstOrDefault()!.Id;
-			var melhorPontuacao = 65;
+			var melhorPontuacao = 0;
 
 			foreach (var item in search.Data!) 
 			{
@@ -96,6 +100,7 @@ namespace ScrollsTracker.Infra.Sources
 				}
 			}
 
+			score = melhorPontuacao;
 			return melhorPesquisa;
 		}
 

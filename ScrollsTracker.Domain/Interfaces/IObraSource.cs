@@ -1,11 +1,11 @@
 ﻿using ScrollsTracker.Domain.Enum;
-using ScrollsTracker.Domain.Models;
+using ScrollsTracker.Infra.Model;
 
 namespace ScrollsTracker.Domain.Interfaces
 {
     public interface IObraSource
     {
-        Task<Obra?> ObterObraAsync(string titulo);
+        Task<SearchResult?> ObterObraAsync(string titulo);
         EnumSources SourceName { get; }
 	}
 }

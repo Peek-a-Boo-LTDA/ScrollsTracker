@@ -1,10 +1,10 @@
 ﻿using ScrollsTracker.Domain.Enum;
-using ScrollsTracker.Domain.Models;
+using ScrollsTracker.Infra.Model;
 
 namespace ScrollsTracker.Domain.Interfaces
 {
     public interface IObraFilter
     {
-		void Filtrar(Obra obra, EnumSources novaOrigem, bool obraNova = false);
+		void Filtrar(SearchResult search, bool obraNova = false);
 	}
 }
