@@ -100,16 +100,6 @@ function ObraForm({
             </div>
           )}
           <div className="grid grid-cols-1 gap-6 w-xl">
-            <button
-              type="button"
-              onClick={handleProcurarClick}
-              disabled={isProcurando || !tituloValue}
-              className={`${
-                Type === "Cadastrar" ? "" : "hidden"
-              } px-3 py-1 border border-indigo-500 text-indigo-400 text-sm font-medium rounded-md hover:bg-indigo-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {isProcurando ? "Carregando..." : "Carregar Dados"}
-            </button>
             {/* Campo Titulo */}
             <div>
               <label
@@ -133,7 +123,16 @@ function ObraForm({
                 </p>
               )}
             </div>
-
+            <button
+              type="button"
+              onClick={handleProcurarClick}
+              disabled={isProcurando || !tituloValue}
+              className={`${
+                Type === "Cadastrar" ? "" : "hidden"
+              } px-3 py-1 border border-indigo-500 text-indigo-400 text-sm font-medium rounded-md hover:bg-indigo-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isProcurando ? "Carregando..." : "Carregar Dados"}
+            </button>
             {/* Campo Descrição */}
             <div>
               <label

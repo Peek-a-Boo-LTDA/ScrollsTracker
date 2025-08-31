@@ -1,8 +1,8 @@
 ﻿using FuzzySharp;
 using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
-using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate;
+using ScrollsTracker.Infra.Model;
 using System.Text;
 using System.Text.Json;
 
@@ -12,13 +12,13 @@ namespace ScrollsTracker.Infra.Sources
 	{
 		public EnumSources SourceName => EnumSources.MangaUpdate;
 		private readonly HttpClient _httpClient;
-
-		public MangaUpdateSource(HttpClient httpClient)
+		//TODO add logger
+		public MangaUpdateSource(HttpClient httpClient) 
 		{
 			_httpClient = httpClient;
 		}
 
-		public async Task<Obra?> ObterObraAsync(string titulo)
+		public async Task<SearchResult?> ObterObraAsync(string titulo)
 		{
 			var search = await ProcurarObraAsync(titulo);
 			if (search == null || search.Results.Count == 0)
@@ -26,7 +26,7 @@ namespace ScrollsTracker.Infra.Sources
 				return null;
 			}
 
-			var result = FiltrarResultados(search.Results, titulo);
+			var result = FiltrarResultados(search.Results, titulo, out var score);
 
 			if (result == null || result.Record == null)
 			{
@@ -35,13 +35,18 @@ namespace ScrollsTracker.Infra.Sources
 
 			var serie = await ObterObraPorIdAsync(result.Record.SeriesId);
 
-			return serie?.ToDomain();
+			if(serie == null)
+			{
+				return null;
+			}
+
+			return new SearchResult(serie.ToDomain(), score, SourceName);
 		}
 
-		private MangaUpdateResultsResponse? FiltrarResultados(IList<MangaUpdateResultsResponse> results, string titulo)
+		private MangaUpdateResultsResponse? FiltrarResultados(IList<MangaUpdateResultsResponse> results, string titulo, out int score)
 		{
 			var melhorPesquisa = results.FirstOrDefault();
-			int melhorPontuacao = 60;
+			int melhorPontuacao = 0;
 
 			foreach (var result in results)
 			{
@@ -58,6 +63,7 @@ namespace ScrollsTracker.Infra.Sources
 				}
 			}
 
+			score = melhorPontuacao;
 			return melhorPesquisa ?? null;
 		}
 

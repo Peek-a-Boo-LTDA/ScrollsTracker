@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using ScrollsTracker.Application.Services.Filter;
-using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 
@@ -25,10 +24,23 @@ namespace ScrollsTracker.Application.Services
 			{
 				try
 				{
-					var obraEncontrada = await source.ObterObraAsync(titulo);
-					if (obraEncontrada != null)
+					var searchResult = await source.ObterObraAsync(titulo);
+
+					if (searchResult == null || searchResult.Obra is null || string.IsNullOrEmpty(searchResult.Obra.Titulo))
 					{
-						obraFilter.Filtrar(obraEncontrada, source.SourceName, true);
+						_logger.LogInformation($"Busca da fonte: {source.SourceName} retornou resultados vazios");
+						continue;
+					}
+
+					if (searchResult.Score <= 40)
+					{
+						_logger.LogInformation($"Busca da fonte: {source.SourceName} retornou resultados com socre muito baixo");
+						continue;
+					}
+
+					if (searchResult != null)
+					{
+						obraFilter.Filtrar(searchResult, true);
 					}
 				}
 				catch (Exception ex)
@@ -50,10 +62,24 @@ namespace ScrollsTracker.Application.Services
 			{
 				try
 				{
-					var obraEncontrada = await source.ObterObraAsync(obra.Titulo!);
-					if (obraEncontrada != null)
+					//TODO Aplicar o DRY aqui, ta zuado
+					var searchResult = await source.ObterObraAsync(obra.Titulo!);
+
+					if (searchResult == null || searchResult.Obra is null || string.IsNullOrEmpty(searchResult.Obra.Titulo))
 					{
-						obraFilter.Filtrar(obraEncontrada, source.SourceName);
+						_logger.LogInformation($"Busca da fonte: {source.SourceName} retornou resultados vazios");
+						continue;
+					}
+
+					if (searchResult.Score <= 40)
+					{
+						_logger.LogInformation($"Busca da fonte: {source.SourceName} retornou resultados com socre muito baixo");
+						continue;
+					}
+
+					if (searchResult != null)
+					{
+						obraFilter.Filtrar(searchResult);
 					}
 				}
 				catch (Exception ex)

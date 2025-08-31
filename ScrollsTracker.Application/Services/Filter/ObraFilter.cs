@@ -1,16 +1,24 @@
 ﻿using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
+using ScrollsTracker.Infra.Model;
 
 namespace ScrollsTracker.Application.Services.Filter
 {
 	public class ObraFilter : IObraFilter
 	{
 		private readonly Obra _obra;
+		private int Score = 0;
 
 		public ObraFilter(string titulo)
 		{
 			_obra = new Obra { Titulo = titulo };
+		}
+
+		public ObraFilter(SearchResult search)
+		{
+			_obra = search.Obra;
+			Score = search.Score;
 		}
 
 		public ObraFilter(Obra obra)
@@ -18,89 +26,91 @@ namespace ScrollsTracker.Application.Services.Filter
 			_obra = obra;
 		}
 
-		public void Filtrar(Obra obra, EnumSources origem, bool obraNova = false)
+		public void Filtrar(SearchResult search, bool obraNova = false)
 		{
 			if (obraNova)
 			{
-				//FiltrarTituloObraNova(obra, origem);
-				FiltrarDescricao(obra, origem);
-				FiltrarTotalCapitulos(obra, origem);
-				FiltrarImagem(obra, origem);
-				FiltrarStatus(obra, origem);
+				//FiltrarTituloObraNova(search);
+				FiltrarDescricao(search);
+				FiltrarTotalCapitulos(search);
+				FiltrarImagem(search);
+				FiltrarStatus(search);
 			}
 			else
 			{
-				//FiltrarTitulo(obra, origem);
-				FiltrarDescricao(obra, origem);
-				FiltrarTotalCapitulos(obra, origem);
-				FiltrarImagem(obra, origem);
-				FiltrarStatus(obra, origem);
+				//FiltrarTitulo(search);
+				FiltrarDescricao(search);
+				FiltrarTotalCapitulos(search);
+				FiltrarImagem(search);
+				FiltrarStatus(search);
 			}
 		}
 
 		public Obra ObraFiltrada => _obra;
 
-		private void FiltrarImagem(Obra obra, EnumSources origem)
+		private void FiltrarImagem(SearchResult search)
 		{
 			if (string.IsNullOrEmpty(_obra.Imagem))
 			{
-				_obra.Imagem = obra.Imagem;
+				_obra.Imagem = search.Obra.Imagem;
 			}
 
-			if (origem == EnumSources.MangaDex && !string.IsNullOrEmpty(obra.Imagem))
+			if (search.Score > Score && !string.IsNullOrEmpty(search.Obra.Imagem))
 			{
-				_obra.Imagem = obra.Imagem;
+				_obra.Imagem = search.Obra.Imagem;
 			}
 		}
 
-		private void FiltrarStatus(Obra obra, EnumSources origem)
+		private void FiltrarStatus(SearchResult search)
 		{
 			if (string.IsNullOrEmpty(_obra.Status))
 			{
-				_obra.Status = obra.Status;
+				_obra.Status = search.Obra.Status;
 			}
 
-			if (origem == EnumSources.MangaDex && !string.IsNullOrEmpty(obra.Status))
+			//TODO aqui talvez fique melhor por sources
+			if (search.Score > Score && !string.IsNullOrEmpty(search.Obra.Imagem))
 			{
-				_obra.Status = obra.Status;
+				_obra.Status = search.Obra.Status;
 			}
 		}
 
-		private void FiltrarTotalCapitulos(Obra obra, EnumSources origem)
+		private void FiltrarTotalCapitulos(SearchResult search)
 		{
-			if (_obra.GetTotalCapitulosAsDouble() == 0 || obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
+			if (_obra.GetTotalCapitulosAsDouble() == 0 || search.Obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
 			{
-				_obra.TotalCapitulos = obra.TotalCapitulos;
+				_obra.TotalCapitulos = search.Obra.TotalCapitulos;
 				_obra.DataAtualizacao = DateTime.Now;
 			}
 		}
 
-		private void FiltrarDescricao(Obra obra, EnumSources origem)
+		private void FiltrarDescricao(SearchResult search)
 		{
 			if (string.IsNullOrEmpty(_obra.Descricao))
 			{
-				_obra.Descricao = obra.Descricao;
+				_obra.Descricao = search.Obra.Descricao;
 			}
 
-			//if (origem == EnumSources.MangaUpdate && !string.IsNullOrEmpty(obra.Descricao))
-			//{
-			//	_obra.Descricao = obra.Descricao;
-			//}
+			//TODO verificar source ou score
+			if (search.Source == EnumSources.MangaUpdate && !string.IsNullOrEmpty(search.Obra.Descricao))
+			{
+				_obra.Descricao = search.Obra.Descricao;
+			}
 		}
 
-		private void FiltrarTitulo(Obra obra, EnumSources origem)
+		private void FiltrarTitulo(SearchResult search)
 		{
 			if (string.IsNullOrEmpty(_obra.Titulo))
 			{
-				_obra.Titulo = obra.Titulo;
+				_obra.Titulo = search.Obra.Titulo;
 			}
 		}
 
-		private void FiltrarTituloObraNova(Obra obra, EnumSources origem)
+		private void FiltrarTituloObraNova(SearchResult search)
 		{
-			if (string.IsNullOrEmpty(_obra.Titulo) || origem == EnumSources.MangaUpdate)
+			if (string.IsNullOrEmpty(_obra.Titulo) || search.Source == EnumSources.MangaUpdate)
 			{
-				_obra.Titulo = obra.Titulo;
+				_obra.Titulo = search.Obra.Titulo;
 			}
 		}
 	}

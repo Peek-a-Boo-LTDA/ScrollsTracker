@@ -5,7 +5,7 @@ using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Domain.Utils;
-using System.Net.Http;
+using ScrollsTracker.Infra.Model;
 
 namespace ScrollsTracker.Infra.Sources
 {
@@ -38,7 +38,7 @@ namespace ScrollsTracker.Infra.Sources
 			return await response.Content.ReadAsStringAsync();
 		}
 
-		public async Task<Obra?> ObterObraAsync(string titulo)
+		public async Task<SearchResult?> ObterObraAsync(string titulo)
 		{
 			var htmlString = await ObterPaginaComDadosDasObrasAsync(titulo);
 			if (string.IsNullOrEmpty(htmlString))
@@ -49,7 +49,7 @@ namespace ScrollsTracker.Infra.Sources
 			return await ObterInformacoesAPartirDoHtml(htmlString, titulo);
 		}
 
-		private async Task<Obra?> ObterInformacoesAPartirDoHtml(string htmlString, string titulo)
+		private async Task<SearchResult?> ObterInformacoesAPartirDoHtml(string htmlString, string titulo)
 		{
 			var config = Configuration.Default.WithDefaultLoader();
 			var context = BrowsingContext.New(config);
@@ -57,10 +57,12 @@ namespace ScrollsTracker.Infra.Sources
 
 			var pesquisaHtml = document.QuerySelectorAll("div.d-cell.text");
 
-			int indice = ProcurarMelhorIndiceDaObraPorTitulo(pesquisaHtml, titulo, out var melhorTitulo);
+			int indice = ProcurarMelhorIndiceDaObraPorTitulo(pesquisaHtml, titulo, out var melhorTitulo, out var score);
 			var capitulos = ObterCapitulos(pesquisaHtml[indice], indice);
 
-			return new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString() };
+			var obra = new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString() };
+
+			return new SearchResult(obra, score, SourceName);
 		}
 
 		private string ObterCapitulos(IElement document, int indice)
@@ -73,10 +75,10 @@ namespace ScrollsTracker.Infra.Sources
 			return StringUtils.ManterApenasNumeros(stringCapitulos);
 		}
 
-		private int ProcurarMelhorIndiceDaObraPorTitulo(IHtmlCollection<IElement> obras, string titulo, out string melhorTitulo)
+		private int ProcurarMelhorIndiceDaObraPorTitulo(IHtmlCollection<IElement> obras, string titulo, out string melhorTitulo, out int score)
 		{
 			int indice = 0;
-			var melhorPontuacao = 50;
+			var melhorPontuacao = 0;
 			var melhorPesquisa = 0;
 			melhorTitulo = "";
 
@@ -95,6 +97,7 @@ namespace ScrollsTracker.Infra.Sources
 				indice++;
 			}
 
+			score = melhorPontuacao;
 			return melhorPesquisa;
 		}
 	}
