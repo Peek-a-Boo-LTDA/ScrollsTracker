@@ -1,0 +1,6 @@
+@ScrollsTracker.DiscordBotApi_HostAddress = http://localhost:5143
+
+GET {{ScrollsTracker.DiscordBotApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
