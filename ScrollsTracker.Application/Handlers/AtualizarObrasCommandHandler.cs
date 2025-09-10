@@ -12,12 +12,14 @@ namespace ScrollsTracker.Application.Handlers
 		private readonly IObraRepository _obraRepository;
 		private readonly IObraAggregatorService _aggregatorService;
 		private readonly ILogger<AtualizarObrasCommandHandler> _logger;
+		private readonly IKafkaProducerService _producer;
 
-		public AtualizarObrasCommandHandler(IObraRepository obraRepository, IObraAggregatorService aggregatorService, ILogger<AtualizarObrasCommandHandler> logger)
+		public AtualizarObrasCommandHandler(IObraRepository obraRepository, IObraAggregatorService aggregatorService, ILogger<AtualizarObrasCommandHandler> logger, IKafkaProducerService producer)
 		{
 			_obraRepository = obraRepository;
 			_aggregatorService = aggregatorService;
 			_logger = logger;
+			_producer = producer;
 		}
 
 		public async Task Handle(AtualizarObrasCommand request, CancellationToken cancellationToken)
@@ -40,6 +42,7 @@ namespace ScrollsTracker.Application.Handlers
 
 				if(result >= 1) 
 				{
+					await _producer.ProduceAsync(obraAtualizada);
 					_logger.LogInformation($"Obra {obraAtualizada.Titulo} atualizada com sucesso. ID: {obraAtualizada.Id}");
 				}
 				else

@@ -26,6 +26,7 @@ namespace ScrollsTracker.DiscordBot.Modules
 				};
 
 				embed.WithImageUrl(obra.Imagem);
+				embed.Color = Color.DarkPurple;
 
 				await channel.SendMessageAsync(embed: embed.Build());
 			}

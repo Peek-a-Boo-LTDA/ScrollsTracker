@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Microsoft.Extensions.Options;
 using ScrollsTracker.DiscordBot.Command;
+using ScrollsTracker.DiscordBot.Model;
 using ScrollsTracker.DiscordBot.Model.Interfaces;
 using ScrollsTracker.DiscordBot.Settings;
 
@@ -74,6 +75,26 @@ namespace ScrollsTracker.DiscordBot.Services
 
 			embed.WithImageUrl(thumbnailUrl);
 			//embed.WithThumbnailUrl(thumbnailUrl);
+
+			await channel.SendMessageAsync(embed: embed.Build());
+		}
+
+		public async Task SendObraMessage(Obra obra)
+		{
+			channel = _client.GetChannel(_fixedChannelId) as IMessageChannel;
+			if (channel == null)
+			{
+				return;
+			}
+
+			var embed = new EmbedBuilder
+			{
+				Title = "Capitulo Novo! " + obra.Titulo,
+				Description = $"{obra.Descricao} \n\n Total de Capitulos: {obra.TotalCapitulos}",
+			};
+
+			embed.WithImageUrl(obra.Imagem);
+			embed.Color = Color.DarkPurple;
 
 			await channel.SendMessageAsync(embed: embed.Build());
 		}

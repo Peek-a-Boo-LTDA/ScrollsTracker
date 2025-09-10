@@ -1,10 +1,11 @@
-﻿using ScrollsTracker.DiscordBot.Model.Interfaces;
-using ScrollsTracker.DiscordBot.Services;
+﻿using Microsoft.Extensions.Hosting;
+using ScrollsTracker.DiscordBot.Model.Interfaces;
 
-namespace ScrollsTracker.DiscordBotApi.HostedServices
+namespace ScrollsTracker.DiscordBot.Services
 {
 	public class DiscordBotHostedService : IHostedService
 	{
+		//TODO: Toda estrutura o bot do discord ta horrivel, arrumar
 		private readonly IBotService _botService;
 
 		public DiscordBotHostedService(IBotService botService)

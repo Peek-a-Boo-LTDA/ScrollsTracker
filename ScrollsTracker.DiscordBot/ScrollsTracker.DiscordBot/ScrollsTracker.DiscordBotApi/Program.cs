@@ -4,7 +4,6 @@ using ScrollsTracker.DiscordBot.Infra.HttpService;
 using ScrollsTracker.DiscordBot.Model.Interfaces;
 using ScrollsTracker.DiscordBot.Services;
 using ScrollsTracker.DiscordBot.Settings;
-using ScrollsTracker.DiscordBotApi.HostedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +28,7 @@ builder.Services.AddSingleton(serviceProvider =>
 // Registra o BotService
 builder.Services.AddSingleton<IBotService, BotService>();
 builder.Services.AddHostedService<DiscordBotHostedService>();
+builder.Services.AddHostedService<KafkaConsumerService>();
 
 var app = builder.Build();
 

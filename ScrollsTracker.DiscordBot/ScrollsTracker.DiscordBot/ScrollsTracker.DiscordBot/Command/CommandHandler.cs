@@ -2,8 +2,6 @@
 using Discord.WebSocket;
 using ScrollsTracker.DiscordBot.Model.Interfaces;
 using ScrollsTracker.DiscordBot.Modules;
-using System.Data.SqlTypes;
-using System.Diagnostics.Metrics;
 
 namespace ScrollsTracker.DiscordBot.Command
 {
