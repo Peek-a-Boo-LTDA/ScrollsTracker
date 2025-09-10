@@ -5,6 +5,7 @@ namespace ScrollsTracker.Domain.Interfaces
 {
     public interface IObraFilter
     {
-		void Filtrar(SearchResult search, bool obraNova = false);
+		void Filtrar(SearchResult search);
+		int Atualizar(SearchResult search);
 	}
 }

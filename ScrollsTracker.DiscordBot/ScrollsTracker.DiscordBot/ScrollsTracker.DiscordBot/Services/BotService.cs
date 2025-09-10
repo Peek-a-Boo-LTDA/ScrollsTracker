@@ -89,8 +89,8 @@ namespace ScrollsTracker.DiscordBot.Services
 
 			var embed = new EmbedBuilder
 			{
-				Title = "Capitulo Novo! " + obra.Titulo,
-				Description = $"{obra.Descricao} \n\n Total de Capitulos: {obra.TotalCapitulos}",
+				Title = "Capitulo Novo! \n\n" + obra.Titulo,
+				Description = $"{obra.Descricao} \n\n Novo Capitulo: {obra.TotalCapitulos}",
 			};
 
 			embed.WithImageUrl(obra.Imagem);
