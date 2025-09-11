@@ -13,7 +13,7 @@ namespace ScrollsTracker.DiscordBot.Modules
 			_scrollsTrackerHttpService = scrollsTrackerHttpService;
 		}
 
-		public async Task SearchAsync(SocketMessage message, IMessageChannel? channel, string titulo)
+		public async Task SearchWebAsync(SocketMessage message, IMessageChannel? channel, string titulo)
 		{
 			var obra = await _scrollsTrackerHttpService.ProcurarObraNasApisExternasAsync(titulo);
 
@@ -29,6 +29,28 @@ namespace ScrollsTracker.DiscordBot.Modules
 				embed.Color = Color.DarkPurple;
 
 				await channel.SendMessageAsync(embed: embed.Build());
+			}
+		}
+
+		public async Task SearchOnScrollTracker(SocketMessage message, IMessageChannel? channel, string titulo)
+		{
+			var obras = await _scrollsTrackerHttpService.ProcurarObraNoScrollTrackerAsync(titulo);
+
+			foreach(var obra in obras)
+			{
+				 if (channel != null)
+				{
+					var embed = new EmbedBuilder
+					{
+						Title = obra.Titulo,
+						Description = $"{obra.Descricao} \n\n Total de Capitulos: {obra.TotalCapitulos}",
+					};
+
+					embed.WithImageUrl(obra.Imagem);
+					embed.Color = Color.DarkPurple;
+
+					await channel.SendMessageAsync(embed: embed.Build());
+				}
 			}
 		}
 	}

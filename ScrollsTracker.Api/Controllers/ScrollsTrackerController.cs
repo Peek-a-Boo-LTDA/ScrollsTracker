@@ -32,6 +32,12 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(await _obraFacade.ObterTodasObrasAsync());
         }
 
+		[HttpGet("ProcurarObras")]
+		public async Task<IActionResult> ProcurarObrasAsync(string titulo)
+		{
+			return Ok(await _obraFacade.ProcurarObrasAsync(titulo));
+		}
+
 		[HttpGet("ProcurarObraNasApisExternas")]
 		public async Task<IActionResult> ProcurarObraApisExternasAsync(string titulo)
 		{

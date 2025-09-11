@@ -26,6 +26,20 @@ namespace ScrollsTracker.DiscordBot.Infra.HttpService
 			var json = await response.Content.ReadAsStringAsync();
 			return JsonConvert.DeserializeObject<Obra>(json)!;
 		}
+
+		public async Task<List<Obra>> ProcurarObraNoScrollTrackerAsync(string titulo)
+		{
+			if (string.IsNullOrWhiteSpace(titulo))
+				throw new ArgumentException("O título não pode ser vazio.", nameof(titulo));
+
+			var url = $"https://localhost:7071/api/ScrollsTracker/ProcurarObras?titulo={Uri.EscapeDataString(titulo)}";
+			var response = await _httpClient.GetAsync(url);
+
+			response.EnsureSuccessStatusCode();
+
+			var json = await response.Content.ReadAsStringAsync();
+			return JsonConvert.DeserializeObject<List<Obra>>(json)!;
+		}
 	}
 
 	

@@ -49,18 +49,26 @@ namespace ScrollsTracker.DiscordBot.Command
 					await new PingModule().ExecuteAsync(message, fixedChannel);
 					break;
 
-				case "search":
-					// Agora, a variável 'arguments' contém o que você precisa
+				case "searchWeb":
 					if (!string.IsNullOrEmpty(arguments))
 					{
-						await _searchModule.SearchAsync(message, fixedChannel, arguments);
+						await _searchModule.SearchWebAsync(message, fixedChannel, arguments);
 					}
 					else
 					{
 						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!search Nome do Titulo`");
 					}
 					break;
-
+				case "search":
+					if (!string.IsNullOrEmpty(arguments))
+					{
+						await _searchModule.SearchOnScrollTracker(message, fixedChannel, arguments);
+					}
+					else
+					{
+						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!search Nome do Titulo`");
+					}
+					break;
 					// Adicione outros comandos aqui...
 			}
 		}
