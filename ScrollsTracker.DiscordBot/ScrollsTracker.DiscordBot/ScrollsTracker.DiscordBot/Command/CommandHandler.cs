@@ -9,13 +9,13 @@ namespace ScrollsTracker.DiscordBot.Command
 	{
 		private readonly DiscordSocketClient _client;
 		private readonly ulong _fixedChannelId;
-		private readonly SearchModule _searchModule;
+		private readonly ObrasModule _searchModule;
 
 		public CommandHandler(DiscordSocketClient client, ulong fixedChannelId, IScrollsTrackerHttpService scrollsTrackerHttpService)
 		{
 			_client = client;
 			_fixedChannelId = fixedChannelId;
-			_searchModule = new SearchModule(scrollsTrackerHttpService);
+			_searchModule = new ObrasModule(scrollsTrackerHttpService);
 		}
 
 		public Task InitializeAsync()
@@ -49,14 +49,14 @@ namespace ScrollsTracker.DiscordBot.Command
 					await new PingModule().ExecuteAsync(message, fixedChannel);
 					break;
 
-				case "searchWeb":
+				case "searchweb":
 					if (!string.IsNullOrEmpty(arguments))
 					{
 						await _searchModule.SearchWebAsync(message, fixedChannel, arguments);
 					}
 					else
 					{
-						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!search Nome do Titulo`");
+						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!searchWeb Nome do Titulo`");
 					}
 					break;
 				case "search":
@@ -67,6 +67,26 @@ namespace ScrollsTracker.DiscordBot.Command
 					else
 					{
 						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!search Nome do Titulo`");
+					}
+					break;
+				case "add":
+					if (!string.IsNullOrEmpty(arguments))
+					{
+						await _searchModule.AddObraAsync(message, fixedChannel, arguments);
+					}
+					else
+					{
+						await fixedChannel.SendMessageAsync("Por favor, forneça um título para o cadastro. Ex: `!add Nome do Titulo`");
+					}
+					break;
+				case "delete":
+					if (!string.IsNullOrEmpty(arguments))
+					{
+						await _searchModule.AddObraAsync(message, fixedChannel, arguments);
+					}
+					else
+					{
+						await fixedChannel.SendMessageAsync("Por favor, forneça um título. Ex: `!delete Nome do Titulo`");
 					}
 					break;
 					// Adicione outros comandos aqui...

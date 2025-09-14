@@ -4,11 +4,11 @@ using ScrollsTracker.DiscordBot.Model.Interfaces;
 
 namespace ScrollsTracker.DiscordBot.Modules
 {
-	public class SearchModule
+	public class ObrasModule
 	{
 		private IScrollsTrackerHttpService _scrollsTrackerHttpService;
 
-		public SearchModule(IScrollsTrackerHttpService scrollsTrackerHttpService)
+		public ObrasModule(IScrollsTrackerHttpService scrollsTrackerHttpService)
 		{
 			_scrollsTrackerHttpService = scrollsTrackerHttpService;
 		}
@@ -32,13 +32,45 @@ namespace ScrollsTracker.DiscordBot.Modules
 			}
 		}
 
+		public async Task AddObraAsync(SocketMessage message, IMessageChannel? channel, string titulo)
+		{
+			var result = await _scrollsTrackerHttpService.CadastrarObraAsync(titulo);
+
+			if (channel != null)
+			{
+				if (!result)
+				{
+					await channel.SendMessageAsync("Não foi possível cadastrar a obra. Talvez ela já exista no banco de dados.");
+					return;
+				}
+				
+				await channel.SendMessageAsync("Obra cadastrada com sucesso!");
+			}
+		}
+
+		public async Task DeletarObraAsync(SocketMessage message, IMessageChannel? channel, string titulo)
+		{
+			var result = await _scrollsTrackerHttpService.DeletarObraAsync(titulo);
+
+			if (channel != null)
+			{
+				if (!result)
+				{
+					await channel.SendMessageAsync("Não foi possível deletar a obra.");
+					return;
+				}
+
+				await channel.SendMessageAsync("Obra deletada com sucesso!");
+			}
+		}
+
 		public async Task SearchOnScrollTracker(SocketMessage message, IMessageChannel? channel, string titulo)
 		{
 			var obras = await _scrollsTrackerHttpService.ProcurarObraNoScrollTrackerAsync(titulo);
 
 			foreach(var obra in obras)
 			{
-				 if (channel != null)
+				if (channel != null)
 				{
 					var embed = new EmbedBuilder
 					{

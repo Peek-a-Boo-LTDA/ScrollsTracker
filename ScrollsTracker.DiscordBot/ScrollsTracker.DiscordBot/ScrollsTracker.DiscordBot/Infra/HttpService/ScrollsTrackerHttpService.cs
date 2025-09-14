@@ -13,6 +13,39 @@ namespace ScrollsTracker.DiscordBot.Infra.HttpService
 			_httpClient = httpClient;
 		}
 
+		public async Task<bool> CadastrarObraAsync(string titulo)
+		{
+			if (string.IsNullOrWhiteSpace(titulo))
+				throw new ArgumentException("O título não pode ser vazio.", nameof(titulo));
+
+			var url = "https://localhost:7071/api/ScrollsTracker/ProcurarECadastrarObra";
+			var request = new HttpRequestMessage(HttpMethod.Post, url)
+			{
+				Content = new StringContent(JsonConvert.SerializeObject(new { titulo }), System.Text.Encoding.UTF8, "application/json")
+			};
+
+			var response = await _httpClient.SendAsync(request);
+
+			return response.IsSuccessStatusCode;
+		}
+
+		public async Task<bool> DeletarObraAsync(string titulo)
+		{
+			if (string.IsNullOrWhiteSpace(titulo))
+				throw new ArgumentException("O título não pode ser vazio.", nameof(titulo));
+
+			var obras = await ProcurarObraNoScrollTrackerAsync(titulo);
+			var obra = obras.FirstOrDefault(o => string.Equals(o.Titulo, titulo, StringComparison.OrdinalIgnoreCase));
+
+			if (obra == null)
+				return false;
+
+			var url = $"https://localhost:7071/api/ScrollsTracker/DeletarObra/{obra.Id}";
+			var response = await _httpClient.DeleteAsync(url);
+
+			return response.IsSuccessStatusCode;
+		}
+
 		public async Task<Obra> ProcurarObraNasApisExternasAsync(string titulo)
 		{
 			if (string.IsNullOrWhiteSpace(titulo))
