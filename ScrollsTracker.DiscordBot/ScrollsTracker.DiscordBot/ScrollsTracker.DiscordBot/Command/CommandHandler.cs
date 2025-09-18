@@ -1,25 +1,25 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using ScrollsTracker.DiscordBot.Model.Interfaces;
 using ScrollsTracker.DiscordBot.Modules;
+using ScrollsTracker.DiscordBot.Services;
 
 namespace ScrollsTracker.DiscordBot.Command
 {
 	public class CommandHandler
 	{
-		private readonly DiscordSocketClient _client;
-		private readonly ulong _fixedChannelId;
+		private DiscordSocketClient? _client;
+		private ulong? _fixedChannel;
 		private readonly ObrasModule _searchModule;
 
-		public CommandHandler(DiscordSocketClient client, ulong fixedChannelId, IScrollsTrackerHttpService scrollsTrackerHttpService)
+		public CommandHandler(ObrasModule obrasModule)
 		{
-			_client = client;
-			_fixedChannelId = fixedChannelId;
-			_searchModule = new ObrasModule(scrollsTrackerHttpService);
+			_searchModule = obrasModule;
 		}
 
-		public Task InitializeAsync()
+		public Task InitializeAsync(BotService botService)
 		{
+			_client = botService.Client ?? throw new ArgumentNullException(nameof(botService.channel), "BotService.client cannot be null."); ;
+			_fixedChannel = botService.FixedChannelId;
 			_client.MessageReceived += HandleCommandAsync;
 			return Task.CompletedTask;
 		}
@@ -41,52 +41,55 @@ namespace ScrollsTracker.DiscordBot.Command
 			string command = parts[0].ToLower(); // Converte para minúsculo para ser case-insensitive
 			string arguments = parts.Length > 1 ? parts[1] : null;
 
-			var fixedChannel = _client.GetChannel(_fixedChannelId) as IMessageChannel;
+			var channel = _client!.GetChannel(_fixedChannel!.Value) as IMessageChannel;
+
+			if (channel == null)
+				throw new Exception("Falha ao obter channel");
 
 			switch (command)
 			{
 				case "ping":
-					await new PingModule().ExecuteAsync(message, fixedChannel);
+					await new PingModule().ExecuteAsync(message, channel);
 					break;
 
 				case "searchweb":
 					if (!string.IsNullOrEmpty(arguments))
 					{
-						await _searchModule.SearchWebAsync(message, fixedChannel, arguments);
+						await _searchModule.SearchWebAsync(message, channel, arguments);
 					}
 					else
 					{
-						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!searchWeb Nome do Titulo`");
+						await channel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!searchWeb Nome do Titulo`");
 					}
 					break;
 				case "search":
 					if (!string.IsNullOrEmpty(arguments))
 					{
-						await _searchModule.SearchOnScrollTracker(message, fixedChannel, arguments);
+						await _searchModule.SearchOnScrollTracker(message, channel, arguments);
 					}
 					else
 					{
-						await fixedChannel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!search Nome do Titulo`");
+						await channel.SendMessageAsync("Por favor, forneça um título para a busca. Ex: `!search Nome do Titulo`");
 					}
 					break;
 				case "add":
 					if (!string.IsNullOrEmpty(arguments))
 					{
-						await _searchModule.AddObraAsync(message, fixedChannel, arguments);
+						await _searchModule.AddObraAsync(message, channel, arguments);
 					}
 					else
 					{
-						await fixedChannel.SendMessageAsync("Por favor, forneça um título para o cadastro. Ex: `!add Nome do Titulo`");
+						await channel.SendMessageAsync("Por favor, forneça um título para o cadastro. Ex: `!add Nome do Titulo`");
 					}
 					break;
 				case "delete":
 					if (!string.IsNullOrEmpty(arguments))
 					{
-						await _searchModule.AddObraAsync(message, fixedChannel, arguments);
+						await _searchModule.AddObraAsync(message, channel, arguments);
 					}
 					else
 					{
-						await fixedChannel.SendMessageAsync("Por favor, forneça um título. Ex: `!delete Nome do Titulo`");
+						await channel.SendMessageAsync("Por favor, forneça um título. Ex: `!delete Nome do Titulo`");
 					}
 					break;
 					// Adicione outros comandos aqui...

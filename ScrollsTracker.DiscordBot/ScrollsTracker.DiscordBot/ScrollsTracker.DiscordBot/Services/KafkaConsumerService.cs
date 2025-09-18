@@ -11,9 +11,9 @@ namespace ScrollsTracker.DiscordBot.Services
 	{
 		private readonly string _topic = "obras";
 		private readonly IConsumer<string, string> _consumer;
-		private readonly IBotService _botService;
+		private readonly BotService _botService;
 
-		public KafkaConsumerService(IBotService botService)
+		public KafkaConsumerService(BotService botService)
 		{
 			var config = new ConsumerConfig
 			{

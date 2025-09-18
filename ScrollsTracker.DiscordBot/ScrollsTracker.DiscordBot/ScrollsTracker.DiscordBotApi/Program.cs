@@ -1,7 +1,9 @@
 using Discord;
 using Discord.WebSocket;
+using ScrollsTracker.DiscordBot.Command;
 using ScrollsTracker.DiscordBot.Infra.HttpService;
 using ScrollsTracker.DiscordBot.Model.Interfaces;
+using ScrollsTracker.DiscordBot.Modules;
 using ScrollsTracker.DiscordBot.Services;
 using ScrollsTracker.DiscordBot.Settings;
 
@@ -26,9 +28,12 @@ builder.Services.AddSingleton(serviceProvider =>
 });
 
 // Registra o BotService
-builder.Services.AddSingleton<IBotService, BotService>();
+builder.Services.AddSingleton<BotService>();
+builder.Services.AddSingleton<CommandHandler>();
 builder.Services.AddHostedService<DiscordBotHostedService>();
 builder.Services.AddHostedService<KafkaConsumerService>();
+builder.Services.AddHttpClient<IScrollsTrackerHttpService, ScrollsTrackerHttpService>();
+builder.Services.AddSingleton<ObrasModule>();
 
 var app = builder.Build();
 

@@ -8,40 +8,43 @@ using ScrollsTracker.DiscordBot.Settings;
 
 namespace ScrollsTracker.DiscordBot.Services
 {
-	public class BotService : IBotService
+	public class BotService
 	{
-		private readonly DiscordSocketClient _client;
-		private readonly CommandHandler _commandHandler;
-		private IMessageChannel? channel;
+		public DiscordSocketClient Client { get; private set; }
+		//private readonly CommandHandler _commandHandler;
+		public IMessageChannel? channel { get; private set; }
 
-		private ulong _fixedChannelId;
+		public ulong FixedChannelId;
 		private string _token;
 
 		public BotService(DiscordSocketClient client, IOptions<DiscordSettings> discordSettingsOptions, IScrollsTrackerHttpService scrollsTrackerHttpService)
 		{
-			_client = client;
+			this.Client = client;
 			var discordSettings = discordSettingsOptions.Value;
 
-			_fixedChannelId = discordSettings.FixedChannelId;
+			if (discordSettings.FixedChannelId == 0)
+			{
+				throw new Exception("FixedChannelId não configurado!");
+			}
+			FixedChannelId = discordSettings.FixedChannelId;
+
 			_token = discordSettings.Token ?? throw new Exception("Token não configurado!");
 
-			_commandHandler = new CommandHandler(_client, _fixedChannelId, scrollsTrackerHttpService);
+			//_commandHandler = new CommandHandler(this.Client, _fixedChannelId, scrollsTrackerHttpService);
 		}
 
 		public async Task StartAsync()
 		{
-			_client.Log += LogAsync;
-			_client.Ready += OnReadyAsync;
+			Client.Log += LogAsync;
+			Client.Ready += OnReadyAsync;
 
-			await _client.LoginAsync(TokenType.Bot, _token);
-			await _client.StartAsync();
-
-			await _commandHandler.InitializeAsync();
+			await Client.LoginAsync(TokenType.Bot, _token);
+			await Client.StartAsync();
 		}
 
 		public async Task StopAsync()
 		{
-			await _client.StopAsync();
+			await Client.StopAsync();
 		}
 
 		private Task LogAsync(LogMessage msg)
@@ -52,16 +55,16 @@ namespace ScrollsTracker.DiscordBot.Services
 
 		public async Task SendMessageThroughChannel(string message)
 		{
-			channel = _client.GetChannel(_fixedChannelId) as IMessageChannel;
+			channel = Client.GetChannel(FixedChannelId) as IMessageChannel;
 			if (channel != null)
 			{
 				await channel.SendMessageAsync(message);
 			}
 		}
 
-		public async Task SendComplexMessage(string title, string description, string thumbnailUrl)
+		public async Task SendEmbedMessageAsync(string title, string description, string thumbnailUrl)
 		{
-			channel = _client.GetChannel(_fixedChannelId) as IMessageChannel;
+			channel = Client.GetChannel(FixedChannelId) as IMessageChannel;
 			if (channel == null)
 			{
 				return;
@@ -69,8 +72,8 @@ namespace ScrollsTracker.DiscordBot.Services
 
 			var embed = new EmbedBuilder
 			{
-				Title = "Título da sua mensagem",
-				Description = "Descrição...",
+				Title = title,
+				Description = description,
 			};
 
 			embed.WithImageUrl(thumbnailUrl);
@@ -79,9 +82,14 @@ namespace ScrollsTracker.DiscordBot.Services
 			await channel.SendMessageAsync(embed: embed.Build());
 		}
 
+		public async Task SendEmbedMessageAsync(EmbedBuilder embedMessage)
+		{
+			await channel!.SendMessageAsync(embed: embedMessage.Build());
+		}
+
 		public async Task SendObraMessage(Obra obra)
 		{
-			channel = _client.GetChannel(_fixedChannelId) as IMessageChannel;
+			channel = Client.GetChannel(FixedChannelId) as IMessageChannel;
 			if (channel == null)
 			{
 				return;
@@ -101,7 +109,7 @@ namespace ScrollsTracker.DiscordBot.Services
 
 		private async Task OnReadyAsync()
 		{
-			Console.WriteLine($"Bot conectado como {_client.CurrentUser}");
+			Console.WriteLine($"Bot conectado como {Client.CurrentUser}");
 			await SendMessageThroughChannel("Estou online no canal fixo! 🚀");
 		}
 	}

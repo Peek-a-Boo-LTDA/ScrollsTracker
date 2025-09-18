@@ -1,16 +1,19 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using ScrollsTracker.DiscordBot.Model.Interfaces;
+using ScrollsTracker.DiscordBot.Services;
 
 namespace ScrollsTracker.DiscordBot.Modules
 {
 	public class ObrasModule
 	{
 		private IScrollsTrackerHttpService _scrollsTrackerHttpService;
+		private BotService _botService;
 
-		public ObrasModule(IScrollsTrackerHttpService scrollsTrackerHttpService)
+		public ObrasModule(IScrollsTrackerHttpService scrollsTrackerHttpService, BotService botService)
 		{
 			_scrollsTrackerHttpService = scrollsTrackerHttpService;
+			_botService = botService;
 		}
 
 		public async Task SearchWebAsync(SocketMessage message, IMessageChannel? channel, string titulo)
@@ -67,6 +70,11 @@ namespace ScrollsTracker.DiscordBot.Modules
 		public async Task SearchOnScrollTracker(SocketMessage message, IMessageChannel? channel, string titulo)
 		{
 			var obras = await _scrollsTrackerHttpService.ProcurarObraNoScrollTrackerAsync(titulo);
+
+			if (!obras.Any())
+			{
+				await channel.SendMessageAsync("Obras não encontrada");
+			}
 
 			foreach(var obra in obras)
 			{
