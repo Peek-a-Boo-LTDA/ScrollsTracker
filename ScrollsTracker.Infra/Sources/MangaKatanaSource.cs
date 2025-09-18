@@ -1,4 +1,5 @@
 ﻿using AngleSharp;
+using AngleSharp.Common;
 using AngleSharp.Dom;
 using FuzzySharp;
 using ScrollsTracker.Domain.Enum;
@@ -55,17 +56,29 @@ namespace ScrollsTracker.Infra.Sources
 			var context = BrowsingContext.New(config);
 			var document = await context.OpenAsync(req => req.Content(htmlString));
 
-			var pesquisaHtml = document.QuerySelectorAll("div.d-cell.text");
+			var titulosECapitulosHtml = document.QuerySelectorAll("div.d-cell.text");
+			var imagemHtml = document.QuerySelectorAll("img");
 
-			int indice = ProcurarMelhorIndiceDaObraPorTitulo(pesquisaHtml, titulo, out var melhorTitulo, out var score);
-			var capitulos = ObterCapitulos(pesquisaHtml[indice], indice);
+			int indice = ProcurarMelhorIndiceDaObraPorTitulo(titulosECapitulosHtml, titulo, out var melhorTitulo, out var score);
+			var capitulos = ObterCapitulos(titulosECapitulosHtml[indice]);
+			var linkImagem = ObterImagem(imagemHtml[indice]);
 
-			var obra = new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString() };
+			var obra = new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString(), Imagem = linkImagem };
 
 			return new SearchResult(obra, score, SourceName);
 		}
 
-		private string ObterCapitulos(IElement document, int indice)
+		private string ObterImagem(IElement imagemHtml)
+		{
+			var src = imagemHtml.Attributes.Where(x => x.Name == "src").FirstOrDefault();
+
+			if (src == null)
+				return "";
+
+			return src.Value;
+		}
+
+		private string ObterCapitulos(IElement document)
 		{
 			var stringCapitulos = document.QuerySelector(".chapter")!
 				.GetElementsByTagName("a")
@@ -77,7 +90,7 @@ namespace ScrollsTracker.Infra.Sources
 
 		private int ProcurarMelhorIndiceDaObraPorTitulo(IHtmlCollection<IElement> obras, string titulo, out string melhorTitulo, out int score)
 		{
-			int indice = 0;
+			var indice = 0;
 			var melhorPontuacao = 0;
 			var melhorPesquisa = 0;
 			melhorTitulo = "";
