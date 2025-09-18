@@ -11,6 +11,6 @@ namespace ScrollsTracker.Api.Config
         {
             services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
             services.AddScoped<IObraRepository, ObraRepository>();
-        }
+		}
     }
 }

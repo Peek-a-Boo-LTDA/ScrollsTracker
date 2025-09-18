@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using ScrollsTracker.Api.Requests;
 using ScrollsTracker.Application.Commands;
+using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Interfaces.Facade;
 using ScrollsTracker.Domain.Models;
 
@@ -15,12 +16,14 @@ namespace ScrollsTracker.Api.Controllers
 		private readonly IObraFacade _obraFacade;
         private readonly IMediator _mediator;
 		private readonly IMapper _mapper;
+		private readonly IKafkaProducerService _producer;
 
-		public ScrollsTrackerController(IObraFacade obraFacade, IMediator mediator, IMapper mapper)
+		public ScrollsTrackerController(IObraFacade obraFacade, IMediator mediator, IMapper mapper, IKafkaProducerService producer)
 		{
 			_obraFacade = obraFacade;
 			_mediator = mediator;
 			_mapper = mapper;
+			_producer = producer;
 		}
 
 		[HttpGet("Obras")]
@@ -28,6 +31,12 @@ namespace ScrollsTracker.Api.Controllers
         {
 			return Ok(await _obraFacade.ObterTodasObrasAsync());
         }
+
+		[HttpGet("ProcurarObras")]
+		public async Task<IActionResult> ProcurarObrasAsync(string titulo)
+		{
+			return Ok(await _obraFacade.ProcurarObrasAsync(titulo));
+		}
 
 		[HttpGet("ProcurarObraNasApisExternas")]
 		public async Task<IActionResult> ProcurarObraApisExternasAsync(string titulo)
@@ -152,6 +161,13 @@ namespace ScrollsTracker.Api.Controllers
 			{
 				return BadRequest(ex.ToString());
 			}
+		}
+
+		[HttpPost]
+		public async Task<IActionResult> PostToKafka([FromBody] Obra obra)
+		{
+			await _producer.ProduceAsync(obra);
+			return Ok("Mensagem enviada para o Kafka!");
 		}
 
 		// TODO: Refatorar?

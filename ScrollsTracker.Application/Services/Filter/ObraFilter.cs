@@ -26,27 +26,26 @@ namespace ScrollsTracker.Application.Services.Filter
 			_obra = obra;
 		}
 
-		public void Filtrar(SearchResult search, bool obraNova = false)
+		public Obra ObraFiltrada => _obra;
+
+		public void Filtrar(SearchResult search)
 		{
-			if (obraNova)
-			{
-				//FiltrarTituloObraNova(search);
-				FiltrarDescricao(search);
-				FiltrarTotalCapitulos(search);
-				FiltrarImagem(search);
-				FiltrarStatus(search);
-			}
-			else
-			{
-				//FiltrarTitulo(search);
-				FiltrarDescricao(search);
-				FiltrarTotalCapitulos(search);
-				FiltrarImagem(search);
-				FiltrarStatus(search);
-			}
+			//FiltrarTituloObraNova(search);
+			FiltrarDescricao(search);
+			FiltrarTotalCapitulos(search);
+			FiltrarImagem(search);
+			FiltrarStatus(search);
 		}
 
-		public Obra ObraFiltrada => _obra;
+		public int Atualizar(SearchResult search)
+		{
+			FiltrarDescricao(search);
+			var novoCapLancado = FiltrarTotalCapitulos(search);
+			FiltrarImagem(search);
+			FiltrarStatus(search);
+
+			return novoCapLancado ? 1 : 0;
+		}
 
 		private void FiltrarImagem(SearchResult search)
 		{
@@ -75,13 +74,16 @@ namespace ScrollsTracker.Application.Services.Filter
 			}
 		}
 
-		private void FiltrarTotalCapitulos(SearchResult search)
+		private bool FiltrarTotalCapitulos(SearchResult search)
 		{
 			if (_obra.GetTotalCapitulosAsDouble() == 0 || search.Obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
 			{
 				_obra.TotalCapitulos = search.Obra.TotalCapitulos;
 				_obra.DataAtualizacao = DateTime.Now;
+				return true;
 			}
+
+			return false;
 		}
 
 		private void FiltrarDescricao(SearchResult search)

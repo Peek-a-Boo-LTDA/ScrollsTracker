@@ -6,6 +6,6 @@ namespace ScrollsTracker.Domain.Interfaces
     {
 		Task<Obra> BuscarObraAgregadaAsync(string titulo);
 
-		Task<Obra> BuscarEAtualizaObraAsync(Obra obra);
+		Task<AtualizacaoResult> BuscarEAtualizaObraAsync(Obra obra);
 	}
 }

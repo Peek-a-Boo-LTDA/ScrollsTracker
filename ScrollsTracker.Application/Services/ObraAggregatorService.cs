@@ -40,7 +40,7 @@ namespace ScrollsTracker.Application.Services
 
 					if (searchResult != null)
 					{
-						obraFilter.Filtrar(searchResult, true);
+						obraFilter.Filtrar(searchResult);
 					}
 				}
 				catch (Exception ex)
@@ -54,10 +54,10 @@ namespace ScrollsTracker.Application.Services
 
 		//TODO: Esse método pode ser melhorado com o filtro ficando mais inteligente
 		// Ele tmb poderia dizer se a obra foi atualizada ou n
-		public async Task<Obra> BuscarEAtualizaObraAsync(Obra obra)
+		public async Task<AtualizacaoResult> BuscarEAtualizaObraAsync(Obra obra)
 		{
 			var obraFilter = new ObraFilter(obra);
-
+			var novoCapLancado = 0;
 			foreach (var source in _sources)
 			{
 				try
@@ -79,7 +79,7 @@ namespace ScrollsTracker.Application.Services
 
 					if (searchResult != null)
 					{
-						obraFilter.Filtrar(searchResult);
+						novoCapLancado += obraFilter.Atualizar(searchResult);
 					}
 				}
 				catch (Exception ex)
@@ -88,8 +88,10 @@ namespace ScrollsTracker.Application.Services
 				}
 			}
 
+			
 			obraFilter.ObraFiltrada.DataVerificacao = DateTime.Now;
-			return obraFilter.ObraFiltrada;
+			return new AtualizacaoResult(obraFilter.ObraFiltrada, (novoCapLancado >= 1));
+			
 		}
 	}
 }

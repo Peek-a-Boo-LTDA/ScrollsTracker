@@ -64,6 +64,20 @@ namespace ScrollsTracker.Api.Repository
 			return await _context.Obras.ToListAsync();
 		}
 
+		public async Task<List<Obra>> ProcurarObrasAsync(string titulo)
+		{
+			if (string.IsNullOrWhiteSpace(titulo))
+			{
+				return new List<Obra>();
+			}
+
+			var tituloUpper = titulo.ToUpper();
+
+			return await _context.Obras
+								 .Where(obra => obra.Titulo!.ToUpper().Contains(tituloUpper))
+								 .ToListAsync();
+		}
+
 		public async Task<List<Obra>> ObterTodasObrasParaAtualizarAsync()
 		{
 			var obras = await _context.Obras.ToListAsync();
