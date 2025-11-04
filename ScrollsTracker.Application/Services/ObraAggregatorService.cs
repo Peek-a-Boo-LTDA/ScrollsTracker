@@ -87,11 +87,9 @@ namespace ScrollsTracker.Application.Services
 					_logger.LogError(ex, $"Falha ao buscar dados da fonte: {source.SourceName}");
 				}
 			}
-
 			
 			obraFilter.ObraFiltrada.DataVerificacao = DateTime.Now;
 			return new AtualizacaoResult(obraFilter.ObraFiltrada, (novoCapLancado >= 1));
-			
 		}
 	}
 }

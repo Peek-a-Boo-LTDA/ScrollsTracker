@@ -4,6 +4,7 @@ using ScrollsTracker.Domain.Interfaces;
 using MediatR;
 using ScrollsTracker.Application.Commands;
 using ScrollsTracker.Domain.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace ScrollsTracker.Application.Handlers
 {
@@ -12,14 +13,16 @@ namespace ScrollsTracker.Application.Handlers
 		private readonly IObraRepository _obraRepository;
 		private readonly IObraAggregatorService _aggregatorService;
 		private readonly ILogger<AtualizarObrasCommandHandler> _logger;
-		private readonly IKafkaProducerService _producer;
+		private readonly IKafkaProducerService _kafkaProducer;
+		private readonly IConfiguration _configuration;
 
-		public AtualizarObrasCommandHandler(IObraRepository obraRepository, IObraAggregatorService aggregatorService, ILogger<AtualizarObrasCommandHandler> logger, IKafkaProducerService producer)
+		public AtualizarObrasCommandHandler(IObraRepository obraRepository, IObraAggregatorService aggregatorService, ILogger<AtualizarObrasCommandHandler> logger, IKafkaProducerService producer, IConfiguration configuration)
 		{
 			_obraRepository = obraRepository;
 			_aggregatorService = aggregatorService;
 			_logger = logger;
-			_producer = producer;
+			_kafkaProducer = producer;
+			_configuration = configuration;
 		}
 
 		public async Task Handle(AtualizarObrasCommand request, CancellationToken cancellationToken)
@@ -44,7 +47,8 @@ namespace ScrollsTracker.Application.Handlers
 				if(result >= 1) 
 				{
 					if (atualizacaoResult.NovoCapitulo)
-						await _producer.ProduceAsync(atualizacaoResult.Obra);
+						if(_configuration["DiscordBot:Enable"] == "true")
+							await _kafkaProducer.ProduceAsync(atualizacaoResult.Obra);
 
 					_logger.LogInformation($"Obra {atualizacaoResult.Obra.Titulo} atualizada com sucesso. ID: {atualizacaoResult.Obra.Id}");
 				}

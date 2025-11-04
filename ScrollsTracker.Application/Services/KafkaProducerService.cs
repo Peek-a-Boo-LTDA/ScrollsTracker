@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Microsoft.Extensions.Configuration;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using System.Text.Json;
@@ -10,14 +11,15 @@ namespace ScrollsTracker.Application.Services
 		private readonly IProducer<string, string> _producer;
 		private readonly string _topic = "obras";
 
-		public KafkaProducerService()
+		public KafkaProducerService(IConfiguration configuration)
 		{
 			var config = new ProducerConfig
 			{
 				BootstrapServers = "localhost:9092" // endereço do Kafka
 			};
 
-			_producer = new ProducerBuilder<string, string>(config).Build();
+			if (configuration["DiscordBot:Enable"] == "true")
+				_producer = new ProducerBuilder<string, string>(config).Build();
 		}
 
 		public async Task ProduceAsync(Obra obra)
