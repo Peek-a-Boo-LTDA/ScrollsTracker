@@ -7,15 +7,17 @@ using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Domain.Utils;
 using ScrollsTracker.Infra.Model;
+using System.Text.RegularExpressions;
+using System.Web;
 
 namespace ScrollsTracker.Infra.Sources
 {
-	public class MangaKatanaSource : IObraSource
+	public class MangaHereSource : IObraSource
 	{
 		public EnumSources SourceName => EnumSources.MangaKatana;
 		private readonly HttpClient _httpClient;
 
-		public MangaKatanaSource(HttpClient httpClient)
+		public MangaHereSource(HttpClient httpClient)
 		{
 			_httpClient = httpClient;
 			if (!_httpClient.DefaultRequestHeaders.UserAgent.Any())
@@ -26,13 +28,12 @@ namespace ScrollsTracker.Infra.Sources
 
 		private async Task<string> ObterPaginaComDadosDasObrasAsync(string titulo)
 		{
-			var url = $"https://mangakatana.com/";
+			var baseUrl = $"https://www.mangahere.cc/search";
 
-			using var formContent = new MultipartFormDataContent();
-			formContent.Add(new StringContent(titulo), name: "s");
-			formContent.Add(new StringContent("book_name"), name: "search_by");
+			string encodedQueryValue = HttpUtility.UrlEncode(titulo);
+			var finalUrl = $"{baseUrl}?title={encodedQueryValue}";
 
-			var response = await _httpClient.PostAsync(url, formContent);
+			var response = await _httpClient.GetAsync(finalUrl);
 
 			response.EnsureSuccessStatusCode();
 
@@ -56,36 +57,28 @@ namespace ScrollsTracker.Infra.Sources
 			var context = BrowsingContext.New(config);
 			var document = await context.OpenAsync(req => req.Content(htmlString));
 
-			var titulosECapitulosHtml = document.QuerySelectorAll("div.d-cell.text");
-			var imagemHtml = document.QuerySelectorAll("img");
+			var htmlProcura = document.QuerySelectorAll("ul.manga-list-4-list li");
+			
+			int indice = ProcurarMelhorIndiceDaObraPorTitulo(htmlProcura, titulo, out var melhorTitulo, out var score);
 
-			int indice = ProcurarMelhorIndiceDaObraPorTitulo(titulosECapitulosHtml, titulo, out var melhorTitulo, out var score);
-			var capitulos = ObterCapitulos(titulosECapitulosHtml[indice]);
-			var linkImagem = ObterImagem(imagemHtml[indice]);
+			var capitulos = ObterCapitulos(htmlProcura[indice]);
 
-			var obra = new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString(), Imagem = linkImagem };
+			var obra = new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString()};
 
 			return new SearchResult(obra, score, SourceName);
 		}
 
-		private string ObterImagem(IElement imagemHtml)
-		{
-			var src = imagemHtml.Attributes.Where(x => x.Name == "src").FirstOrDefault();
-
-			if (src == null)
-				return "";
-
-			return src.Value;
-		}
-
 		private string ObterCapitulos(IElement document)
 		{
-			var stringCapitulos = document.QuerySelector(".chapter")!
-				.GetElementsByTagName("a")
-				.FirstOrDefault()!
-				.InnerHtml;
+			var stringCapitulos = document.QuerySelectorAll(".manga-list-4-item-tip")[1]!
+				.GetElementsByTagName("a").FirstOrDefault()!.InnerHtml;
 
-			return StringUtils.ManterApenasNumeros(stringCapitulos);
+			var match = Regex.Match(stringCapitulos, @"Ch\.?\s*([\d\.]+)");
+			if (!match.Success)
+				return "";
+
+			string numeroCapitulo = match.Groups[1].Value;
+			return numeroCapitulo;
 		}
 
 		private int ProcurarMelhorIndiceDaObraPorTitulo(IHtmlCollection<IElement> obras, string titulo, out string melhorTitulo, out int score)
@@ -97,7 +90,8 @@ namespace ScrollsTracker.Infra.Sources
 
 			foreach (var element in obras)
 			{
-				var tituloEncontrado = element.GetElementsByClassName("title").FirstOrDefault()!.InnerHtml;
+				var ancoraTitulo = element.GetElementsByClassName("manga-list-4-item-title").FirstOrDefault()!.GetElementsByTagName("a").FirstOrDefault()!;
+				var tituloEncontrado = ancoraTitulo.InnerHtml;
 				int similaridade = Fuzz.Ratio(tituloEncontrado, titulo);
 
 				if (similaridade >= melhorPontuacao)

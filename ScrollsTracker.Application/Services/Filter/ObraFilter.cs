@@ -68,9 +68,34 @@ namespace ScrollsTracker.Application.Services.Filter
 			}
 
 			//TODO aqui talvez fique melhor por sources
-			if (search.Score > Score && !string.IsNullOrEmpty(search.Obra.Imagem))
+			if (search.Score > Score && !string.IsNullOrEmpty(search.Obra.Status))
 			{
-				_obra.Status = search.Obra.Status;
+				_obra.Status = LimparStatus(search.Obra.Status);
+			}
+		}
+
+		private string? LimparStatus(string status)
+		{
+			if (status.Length <= 20)
+			{
+				return status;
+			}
+
+			if (status.ToLowerInvariant().Contains("ongoing"))
+			{
+				return "ongoing";
+			} 
+			else if (status.ToLowerInvariant().Contains("hiatu"))
+			{
+				return "Hiatus";
+			}
+			else if (status.ToLowerInvariant().Contains("hiatu"))
+			{
+				return "Complete";
+			}
+			else
+			{
+				return status;
 			}
 		}
 
