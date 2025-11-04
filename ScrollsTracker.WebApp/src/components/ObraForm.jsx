@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
@@ -32,6 +33,8 @@ function ObraForm({
       status: "Lendo",
     },
   });
+
+  const navigate = useNavigate();
 
   const procurarObraApi = async (titulo) => {
     if (!titulo) {
@@ -328,7 +331,7 @@ function ObraForm({
                 {isSubmitting ? "Salvando..." : submitButtonText}
               </button>
             </div>
-            {/* Botão de Deletar (se aplicável) */}
+            {/* Botão de Deletar */}
             {Type === "Atualizar" && onDelete && (
               <div>
                 <button
@@ -341,6 +344,14 @@ function ObraForm({
                 </button>
               </div>
             )}
+            <button
+              onClick={() => {
+                navigate("/biblioteca");
+              }}
+              className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              Voltar
+            </button>
           </div>
         </div>
       </form>

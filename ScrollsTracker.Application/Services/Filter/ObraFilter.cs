@@ -35,6 +35,7 @@ namespace ScrollsTracker.Application.Services.Filter
 			FiltrarTotalCapitulos(search);
 			FiltrarImagem(search);
 			FiltrarStatus(search);
+			Score = search.Score;
 		}
 
 		public int Atualizar(SearchResult search)
@@ -101,7 +102,9 @@ namespace ScrollsTracker.Application.Services.Filter
 
 		private bool FiltrarTotalCapitulos(SearchResult search)
 		{
-			if (_obra.GetTotalCapitulosAsDouble() == 0 || search.Obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
+			if ((_obra.GetTotalCapitulosAsDouble() == 0
+				|| search.Obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
+				&& search.Score >= Score)
 			{
 				_obra.TotalCapitulos = search.Obra.TotalCapitulos;
 				_obra.DataAtualizacao = DateTime.Now;
