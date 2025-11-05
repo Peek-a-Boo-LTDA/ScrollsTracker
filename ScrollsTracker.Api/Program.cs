@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using ScrollsTracker.Api.AutoMapperProfile;
 using ScrollsTracker.Api.Config;
 using ScrollsTracker.Application.Reference;
@@ -6,12 +7,34 @@ using ScrollsTracker.Infra.Repository.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var provider = builder.Configuration["DatabaseProvider"];
+string? connectionString;
+
+if (string.IsNullOrEmpty(provider))
+{
+    throw new InvalidOperationException("Provider do banco não encontrada");
+}
+
+switch (provider)
+{
+	case "Sqlite":
+		connectionString = builder.Configuration.GetConnectionString("Sqlite");
+		break;
+
+	case "SqlServer":
+		connectionString = builder.Configuration.GetConnectionString("SqlServer");
+		break;
+
+	default:
+		throw new InvalidOperationException($"Database provider '{provider}' não é suportado.");
+}
+
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("ConnectionString do banco não encontrada");
+	throw new InvalidOperationException("ConnectionString do banco não encontrada");
 }
-builder.Services.AddConfigRepository(connectionString);
+
+builder.Services.AddConfigRepository(connectionString, provider);
 
 builder.Services.AddLogging();
 builder.Services.AddCorsConfig();
@@ -31,11 +54,11 @@ builder.Services.AddMediatR(cfg => {
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-	db.Database.Migrate();
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//	db.Database.Migrate();
+//}
 
 app.UseCors("PermitirFrontend");
 

@@ -7,10 +7,26 @@ namespace ScrollsTracker.Api.Config
 {
     public static class RepositoryConfig
     {
-        public static void AddConfigRepository(this IServiceCollection services, string connectionString)
+        public static void AddConfigRepository(this IServiceCollection services, string connectionString, string provider)
         {
-            services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
-            services.AddScoped<IObraRepository, ObraRepository>();
+			var assemblyName = typeof(AppDbContext).Assembly.GetName().Name;
+			services.AddDbContext<AppDbContext>(options =>
+			{
+				switch (provider)
+				{
+					case "Sqlite":
+						options.UseSqlite(connectionString,
+							b => b.MigrationsAssembly(assemblyName));
+						break;
+
+					case "SqlServer":
+						options.UseSqlServer(connectionString,
+							b => b.MigrationsAssembly(assemblyName));
+						break;
+				}
+			});
+
+			services.AddScoped<IObraRepository, ObraRepository>();
 		}
     }
 }
