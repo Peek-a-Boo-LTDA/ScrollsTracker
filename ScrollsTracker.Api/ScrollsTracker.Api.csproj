@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ScrollsTracker.Application\ScrollsTracker.Application.csproj" />
+    <ProjectReference Include="..\ScrollsTracker.Domain\ScrollsTracker.Domain.csproj" />
     <ProjectReference Include="..\ScrollsTracker.Infra\ScrollsTracker.Infra.csproj" />
   </ItemGroup>
 

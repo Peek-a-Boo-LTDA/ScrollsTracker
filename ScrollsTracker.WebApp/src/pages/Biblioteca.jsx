@@ -15,6 +15,7 @@ function Biblioteca() {
     queryKey: ["obras"],
     queryFn: async () => {
       const res = await fetch(`${baseUrl}/api/ScrollsTracker/Obras`);
+      console.log(baseUrl);
       return res.json();
     },
   });
