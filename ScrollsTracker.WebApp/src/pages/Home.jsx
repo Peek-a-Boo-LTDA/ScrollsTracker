@@ -23,7 +23,7 @@ function Home() {
   return (
     <div className="space-y-4 p-4 min-h-screen">
       <div>
-        <h1 className="text-white text-2xl">Bem-vindo ao ScrollsMaster1</h1>
+        <h1 className="text-white text-2xl">Bem-vindo ao ScrollsTraker</h1>
       </div>
       <div className="border-b-2 border-white">
         <h1 className="text-white text-lg">Ultimos lançamentos</h1>
