@@ -53,7 +53,11 @@ function Biblioteca() {
   ]);
 
   if (isLoading) {
-    return <h1 className="text-white p-4">Carregando...</h1>;
+    return (
+      <div className="space-y-4 p-4 min-h-screen">
+        <h1 className="text-white">Carregando...</h1>
+      </div>
+    );
   }
 
   return (
