@@ -4,9 +4,12 @@ import Biblioteca from "./pages/Biblioteca";
 import Home from "./pages/Home";
 import CadastrarObra from "./pages/CadastrarObra";
 import AtualizarObra from "./pages/AtualizarObra";
+import Conta from "./pages/Conta";
 import ImportarObra from "./pages/ImportarObras";
 
 const router = createBrowserRouter([
+  { path: "/login", element: <Conta key="login" /> },
+  { path: "/cadastro", element: <Conta cadastro key="cadastro" /> },
   {
     element: <Layout />,
     children: [

@@ -12,7 +12,8 @@
                         //Url do front
                         policy.WithOrigins("http://localhost:5173")
                               .AllowAnyMethod()
-                              .AllowAnyHeader();
+                              .AllowAnyHeader()
+                              .AllowCredentials();
                     });
             });
         }

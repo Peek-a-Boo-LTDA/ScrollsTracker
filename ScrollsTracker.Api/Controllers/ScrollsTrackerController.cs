@@ -1,9 +1,14 @@
 ﻿using AutoMapper;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using ScrollsTracker.Api.Config;
+using ScrollsTracker.Api.Services;
+using ScrollsTracker.Infra.Repository.Context;
 using ScrollsTracker.Api.Requests;
 using ScrollsTracker.Application.Commands;
-using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Interfaces.Facade;
 using ScrollsTracker.Domain.Models;
 
@@ -11,31 +16,37 @@ namespace ScrollsTracker.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public class ScrollsTrackerController : ControllerBase
     {
 		private readonly IObraFacade _obraFacade;
         private readonly IMediator _mediator;
 		private readonly IMapper _mapper;
-		private readonly IKafkaProducerService _producer;
+		private readonly AppDbContext _db;
+		private readonly LeituraService _leituras;
 
-		public ScrollsTrackerController(IObraFacade obraFacade, IMediator mediator, IMapper mapper, IKafkaProducerService producer)
+		private string UsuarioId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+		public ScrollsTrackerController(IObraFacade obraFacade, IMediator mediator, IMapper mapper, AppDbContext db, LeituraService leituras)
 		{
 			_obraFacade = obraFacade;
 			_mediator = mediator;
 			_mapper = mapper;
-			_producer = producer;
+			_db = db;
+			_leituras = leituras;
 		}
 
 		[HttpGet("Obras")]
         public async Task<IActionResult> GetAllObrasAsync()
         {
-			return Ok(await _obraFacade.ObterTodasObrasAsync());
+			return Ok(await _leituras.ComLeituraAsync(await _obraFacade.ObterTodasObrasAsync(), UsuarioId));
         }
 
 		[HttpGet("ProcurarObras")]
 		public async Task<IActionResult> ProcurarObrasAsync(string titulo)
 		{
-			return Ok(await _obraFacade.ProcurarObrasAsync(titulo));
+			return Ok(await _leituras.ComLeituraAsync(await _obraFacade.ProcurarObrasAsync(titulo), UsuarioId));
 		}
 
 		[HttpGet("ProcurarObraNasApisExternas")]
@@ -47,15 +58,21 @@ namespace ScrollsTracker.Api.Controllers
 		[HttpGet("ObterObra/{id}")]
 		public async Task<IActionResult> GetObraByIdAsync(int id)
 		{
-			return Ok(await _obraFacade.GetObraByIdAsync(id));
+			var obra = await _obraFacade.GetObraByIdAsync(id);
+			if (obra == null)
+				return NotFound();
+
+			var resposta = await _leituras.ComLeituraAsync([obra], UsuarioId);
+			return Ok(resposta[0]);
 		}
 
 		[HttpGet("ObterLancamentos")]
 		public async Task<IActionResult> GetLancamentosAsync()
 		{
-			return Ok(await _obraFacade.ObterLancamentosAsync());
+			return Ok(await _leituras.ComLeituraAsync(await _obraFacade.ObterLancamentosAsync(), UsuarioId));
 		}
 
+		[Authorize(Policy = ContaConfig.PodeCadastrarObras)]
 		[HttpPost("ProcurarECadastrarObra")]
 		public async Task<IActionResult> ProcurarECadastrarObraAsync([FromBody] ProcurarECadastrarObraCommand command)
 		{
@@ -71,13 +88,20 @@ namespace ScrollsTracker.Api.Controllers
 			}
 		}
 
+		[Authorize(Policy = ContaConfig.PodeCadastrarObras)]
 		[HttpPost("CadastrarObra")]
         public async Task<IActionResult> CadastrarObraAsync([FromBody] ObraRequest obraRequest)
         {
             try
             {
+				await using var transacao = await _db.Database.BeginTransactionAsync();
 				var obra = _mapper.Map<Obra>(obraRequest);
+				obra.Titulo = obra.Titulo!.Trim();
 				var result = await _obraFacade.CadastrarObraAsync(obra);
+				if (obraRequest.UltimoCapituloLido != null || obraRequest.StatusLeitura != null)
+					await _leituras.AtualizarAsync(obra.Id, UsuarioId, obraRequest);
+				await _db.SaveChangesAsync();
+				await transacao.CommitAsync();
 
 				return Created(nameof(CadastrarObraAsync), result);
             }
@@ -87,29 +111,46 @@ namespace ScrollsTracker.Api.Controllers
             }
         }
 
+		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]
 		[HttpPut("AtualizarObra/{id}")]
-		public async Task<IActionResult> AtualizarObraAsync(int id, [FromBody] ObraRequest obraRequest)
+		public async Task<IActionResult> UpdateObraAsync(int id, [FromBody] ObraRequest obraRequest)
 		{
+			var obra = await _obraFacade.GetObraByIdAsync(id);
+			if (obra == null)
+				return NotFound();
+
+			_mapper.Map(obraRequest, obra);
+			obra.Titulo = obra.Titulo!.Trim();
+			await _leituras.AtualizarAsync(id, UsuarioId, obraRequest);
 			try
 			{
-				var obra = _mapper.Map<Obra>(obraRequest);
-
-				if (obra == null)
-				{
-					return BadRequest("Obra inválida.");
-				}
-
-				obra.Id = id;
-				var result = await _obraFacade.UpdateObraAsync(obra);
-
-				return Ok(result);
+				return Ok(await _db.SaveChangesAsync());
 			}
-			catch (Exception ex)
+			catch (DbUpdateException)
 			{
-				return BadRequest(ex.Message);
+				return Conflict("Não foi possível salvar as alterações. Recarregue a obra e tente novamente.");
 			}
 		}
 
+		[HttpPut("Obras/{id:int}/leitura")]
+		public async Task<IActionResult> AtualizarLeituraAsync(int id, LeituraRequest progresso)
+		{
+			if (!await _db.Obras.AnyAsync(obra => obra.Id == id))
+				return NotFound();
+
+			await _leituras.AtualizarAsync(id, UsuarioId, progresso);
+			try
+			{
+				await _db.SaveChangesAsync();
+				return NoContent();
+			}
+			catch (DbUpdateException)
+			{
+				return Conflict("Não foi possível salvar o progresso. Recarregue a obra e tente novamente.");
+			}
+		}
+
+		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]
 		[HttpDelete("DeletarObra/{id}")]
 		public async Task<IActionResult> DeletarObraAsync(int id)
 		{
@@ -129,7 +170,8 @@ namespace ScrollsTracker.Api.Controllers
 		public async Task<IActionResult> DownloadJsonFileAsync()
 		{
 			var obras = await _obraFacade.ObterTodasObrasAsync();
-			string jsonContent = System.Text.Json.JsonSerializer.Serialize(obras);
+			var obrasComLeitura = await _leituras.ComLeituraAsync(obras, UsuarioId);
+			string jsonContent = System.Text.Json.JsonSerializer.Serialize(obrasComLeitura);
 
 			byte[] fileBytes = System.Text.Encoding.UTF8.GetBytes(jsonContent);
 
@@ -138,14 +180,34 @@ namespace ScrollsTracker.Api.Controllers
 			return File(fileBytes, "application/json", fileName);
 		}
 
+		[Authorize(Policy = ContaConfig.PodeCadastrarObras)]
 		[HttpPost("importar-obras")]
 		public async Task<IActionResult> ImportJsonFileAsync([FromBody] List<ObraRequest> obraRequest)
 		{
-			var obras = _mapper.Map<List<Obra>>(obraRequest);
-			var result = await _obraFacade.CadastrarObrasAsync(obras);
-			return Ok(result);
+			var entradas = obraRequest.DistinctBy(obra => obra.Titulo!.Trim()).ToList();
+			await using var transacao = await _db.Database.BeginTransactionAsync();
+			foreach (var entrada in entradas)
+			{
+				var titulo = entrada.Titulo!.Trim();
+				var obra = await _db.Obras.SingleOrDefaultAsync(item => item.Titulo == titulo);
+				if (obra == null)
+				{
+					obra = _mapper.Map<Obra>(entrada);
+					obra.Titulo = titulo;
+					_db.Obras.Add(obra);
+					await _db.SaveChangesAsync();
+				}
+
+				if (entrada.UltimoCapituloLido != null || entrada.StatusLeitura != null)
+					await _leituras.AtualizarAsync(obra.Id, UsuarioId, entrada);
+			}
+
+			await _db.SaveChangesAsync();
+			await transacao.CommitAsync();
+			return Ok(entradas.Count);
 		}
 
+		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]
 		[HttpPost("atualizar-obras")]
 		public async Task<IActionResult> AtualizarObrasAsync()
 		{
@@ -161,13 +223,6 @@ namespace ScrollsTracker.Api.Controllers
 			{
 				return BadRequest(ex.ToString());
 			}
-		}
-
-		[HttpPost]
-		public async Task<IActionResult> PostToKafka([FromBody] Obra obra)
-		{
-			await _producer.ProduceAsync(obra);
-			return Ok("Mensagem enviada para o Kafka!");
 		}
 
 		// TODO: Refatorar?

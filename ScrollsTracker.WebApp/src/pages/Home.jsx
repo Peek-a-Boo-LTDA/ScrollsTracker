@@ -1,13 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import MangaShelf from "../components/MangaShelf";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+import { apiFetch } from "../api";
 
 function Home() {
-  const { data: obras = [], isLoading } = useQuery({
-    queryKey: ["obras"],
+  const { data: obras = [], isLoading, isError } = useQuery({
+    queryKey: ["lancamentos"],
     queryFn: async () => {
-      const res = await fetch(`${baseUrl}/api/ScrollsTracker/ObterLancamentos`);
+      const res = await apiFetch(`/api/ScrollsTracker/ObterLancamentos`);
+      if (!res.ok) throw new Error("Falha ao carregar os lançamentos.");
       return res.json();
     },
   });
@@ -20,16 +21,15 @@ function Home() {
     );
   }
 
+  if (isError) return <p role="alert" className="p-4 text-white">Falha ao carregar os lançamentos.</p>;
+
   return (
-    <div className="space-y-4 p-4 min-h-screen">
-      <div>
-        <h1 className="text-white text-2xl">Bem-vindo ao ScrollsTraker</h1>
-      </div>
-      <div className="border-b-2 border-white">
-        <h1 className="text-white text-lg">Ultimos lançamentos</h1>
-      </div>
-      <MangaShelf obras={obras} />
-    </div>
+    <section className="page-width page-content">
+      <h1 className="page-title">Últimos lançamentos</h1>
+      {obras.length > 0 ? <MangaShelf obras={obras} /> : (
+        <p className="surface empty-state">Nenhum lançamento recente.</p>
+      )}
+    </section>
   );
 }
 

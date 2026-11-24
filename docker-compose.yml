@@ -1,37 +1,14 @@
-version: '3.9'
-
 services:
-  # sqlserver:
-  #   image: mcr.microsoft.com/mssql/server:2022-latest
-  #   container_name: sqlserver
-  #   environment:
-  #     - ACCEPT_EULA=Y
-  #     - SA_PASSWORD=SuaSenha@123
-  #   ports:
-  #     - "1433:1433"
-  #   volumes:
-  #     - sqlvolume:/var/opt/mssql
-  #   networks:
-  #     - appnet
   api:
     build: .
-    container_name: scrolls-tracker
-    # depends_on:
-    #   - sqlserver
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      # - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=Credito;User Id=sa;Password=SuaSenha@123;TrustServerCertificate=True;
     ports:
-      - "5000:8080"
-    networks:
-      - appnet
-    command: >
-      sh -c "
-        dotnet TesteTecnicoDotNet.Api
-      "
-
-volumes:
-  sqlvolume:
-
-networks:
-  appnet:
+      - "127.0.0.1:${SCROLLSTRACKER_PORT:-5000}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DatabaseProvider: Sqlite
+      ConnectionStrings__Sqlite: Data Source=/data/scrollstracker.db
+      DataProtection__KeysPath: /data/keys
+      Administrador__Email: "${Administrador__Email:-}"
+      Administrador__Senha: "${Administrador__Senha:-}"
+    volumes:
+      - ./data:/data

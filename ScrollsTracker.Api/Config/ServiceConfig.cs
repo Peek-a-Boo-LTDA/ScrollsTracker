@@ -13,7 +13,6 @@ namespace ScrollsTracker.Api.Config
 			services.AddHttpClient<IObraSource, MangaKatanaSource>();
 			services.AddHttpClient<IObraSource, MangaHereSource>();
 			services.AddScoped<IObraAggregatorService, ObraAggregatorService>();
-			services.AddSingleton<IKafkaProducerService, KafkaProducerService>();
 		}
     }
 }

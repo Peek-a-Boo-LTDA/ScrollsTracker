@@ -8,7 +8,10 @@ namespace ScrollsTracker.Api.AutoMapperProfile
 	{
 		public AutoMapperProfile()
 		{
-			CreateMap<ObraRequest, Obra>().ReverseMap();
+			CreateMap<ObraRequest, Obra>();
+			CreateMap<Obra, ObraResponse>()
+				.ForMember(destino => destino.StatusLeitura, membro => membro.Ignore())
+				.ForMember(destino => destino.UltimoCapituloLido, membro => membro.Ignore());
 		}
 	}
 }

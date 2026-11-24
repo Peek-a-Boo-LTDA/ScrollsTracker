@@ -3,7 +3,7 @@ import MangaItem from "../components/MangaItem.jsx";
 function MangaShelf(props) {
   const { obras } = props;
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {obras.map((obra) => (
         <MangaItem
           id={obra.id}

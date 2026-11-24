@@ -1,0 +1,14 @@
+.git
+.agents
+.codex
+.aws
+data
+**/.env
+**/.env.*
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/scrollstracker.db*
+ScrollsTracker.Api/wwwroot/index.html
+ScrollsTracker.Api/wwwroot/assets

@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+import { apiFetch } from "../api";
 
 function ObraForm({
   initialData,
@@ -13,6 +13,7 @@ function ObraForm({
   Type,
   isDeleting,
   onDelete,
+  somenteLeitura = false,
 }) {
   const {
     register,
@@ -30,7 +31,8 @@ function ObraForm({
       totalCapitulos: 0,
       ultimoCapituloLido: 0,
       imagem: "",
-      status: "Lendo",
+      status: "",
+      statusLeitura: "Lendo",
     },
   });
 
@@ -40,8 +42,8 @@ function ObraForm({
     if (!titulo) {
       throw new Error("O título não pode ser vazio.");
     }
-    const response = await fetch(
-      `${baseUrl}/api/ScrollsTracker/ProcurarObraNasApisExternas?titulo=${encodeURIComponent(
+    const response = await apiFetch(
+      `/api/ScrollsTracker/ProcurarObraNasApisExternas?titulo=${encodeURIComponent(
         titulo
       )}`
     );
@@ -84,25 +86,31 @@ function ObraForm({
   };
 
   return (
-    <div className="min-h-screen w-4xl flex items-center justify-center p-4">
+    <div className="w-full max-w-4xl p-4">
       <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="w-full bg-gray-800 p-8 rounded-lg shadow-md border border-gray-700"
+        onSubmit={handleSubmit((dados) => onSubmit({
+          ...dados,
+          totalCapitulos: dados.totalCapitulos?.toString() ?? null,
+          ultimoCapituloLido: dados.ultimoCapituloLido?.toString() || null,
+          statusLeitura: dados.statusLeitura || null,
+        }))}
+        className="surface w-full p-4 sm:p-7"
       >
-        <div className="flex justify-center mb-4 gap-4 w-full">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           {imageUrl && (
-            <div className="mt-4">
+            <div className="mx-auto w-36 shrink-0 sm:w-48">
               <img
+                key={imageUrl}
                 src={imageUrl}
                 alt="Pré-visualização da capa"
-                className="w-4xs h-110 object-cover rounded-md border-2 border-gray-600"
+                className="w-full h-auto object-contain rounded-md border-2 border-gray-600"
                 onError={(e) => {
                   e.target.style.display = "none";
                 }}
               />
             </div>
           )}
-          <div className="grid grid-cols-1 gap-6 w-xl">
+          <div className="grid min-w-0 flex-1 grid-cols-1 gap-6">
             {/* Campo Titulo */}
             <div>
               <label
@@ -114,11 +122,12 @@ function ObraForm({
               <input
                 type="text"
                 id="titulo"
-                className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                readOnly={somenteLeitura}
+                className={`field block w-full read-only:bg-slate-900/70 ${
                   errors.titulo ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="Ex: One Piece"
-                {...register("titulo", { required: "O título é obrigatório." })}
+                {...register("titulo", { required: !somenteLeitura && "O título é obrigatório." })}
               />
               {errors.titulo && (
                 <p className="mt-1 w-full text-xs text-red-400">
@@ -146,13 +155,14 @@ function ObraForm({
               </label>
               <textarea
                 id="descricao"
+                readOnly={somenteLeitura}
                 rows="3"
-                className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                className={`field block w-full read-only:bg-slate-900/70 ${
                   errors.descricao ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="Uma breve descrição da obra..."
                 {...register("descricao", {
-                  required: "A descrição é obrigatória.",
+                  required: !somenteLeitura && "A descrição é obrigatória.",
                 })}
               ></textarea>
               {errors.descricao && (
@@ -173,12 +183,13 @@ function ObraForm({
               <input
                 type="text"
                 id="imagem"
-                className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                readOnly={somenteLeitura}
+                className={`field block w-full read-only:bg-slate-900/70 ${
                   errors.imagem ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="https://exemplo.com/capa.jpg"
                 {...register("imagem", {
-                  required: "A URL da imagem é obrigatória.",
+                  required: !somenteLeitura && "A URL da imagem é obrigatória.",
                 })}
               />
               {errors.imagem && (
@@ -201,15 +212,16 @@ function ObraForm({
                 <input
                   type="text"
                   id="totalCapitulos"
+                  readOnly={somenteLeitura}
                   step="any"
                   pattern="[0-9]*[.]?[0-9]*"
-                  className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                  className={`field block w-full read-only:bg-slate-900/70 ${
                     errors.totalCapitulos ? "border-red-500" : "border-gray-600"
                   }`}
                   placeholder="1100"
                   {...register("totalCapitulos", {
-                    required: "Campo obrigatório.",
-                    min: {
+                    required: !somenteLeitura && "Campo obrigatório.",
+                    min: somenteLeitura ? undefined : {
                       value: 0,
                       message: "O valor não pode ser negativo.",
                     },
@@ -223,7 +235,7 @@ function ObraForm({
               </div>
 
               {/* Campo Último Capítulo Lido */}
-              <div className="h-18">
+              <div>
                 <label
                   htmlFor="ultimoCapituloLido"
                   className="block text-sm font-medium text-gray-300 mb-1"
@@ -233,27 +245,26 @@ function ObraForm({
                 <input
                   type="text"
                   id="ultimoCapituloLido"
-                  step="any"
-                  pattern="[0-9]*[.]?[0-9]*"
-                  className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                  inputMode="decimal"
+                  pattern="[0-9]+([.,][0-9]+)?"
+                  maxLength={24}
+                  className={`field block w-full read-only:bg-slate-900/70 ${
                     errors.ultimoCapituloLido
                       ? "border-red-500"
                       : "border-gray-600"
                   }`}
                   placeholder="1050"
                   {...register("ultimoCapituloLido", {
-                    required: "Campo obrigatório.",
+                    required: Type === "Cadastrar" && "Campo obrigatório.",
                     min: {
                       value: 0,
                       message: "O valor não pode ser negativo.",
                     },
                     validate: (value) => {
-                      if (!totalCapitulosValue || isNaN(totalCapitulosValue))
-                        return true;
-                      return (
-                        parseInt(value) <= parseInt(totalCapitulosValue) ||
-                        "Não pode ser maior que o total de capítulos."
-                      );
+                      const total = Number(String(totalCapitulosValue ?? "").replace(",", "."));
+                      const capitulo = Number(String(value ?? "").replace(",", "."));
+                      return !Number.isFinite(total) || total <= 0 || capitulo <= total ||
+                        `O último capítulo lido deve ser no máximo ${totalCapitulosValue}.`;
                     },
                   })}
                 />
@@ -275,13 +286,12 @@ function ObraForm({
               </label>
               <select
                 id="statusLeitura"
-                className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                className={`field block w-full ${
                   errors.statusLeitura ? "border-red-500" : "border-gray-600"
                 }`}
-                {...register("statusLeitura", {
-                  required: "Selecione um status.",
-                })}
+                {...register("statusLeitura")}
               >
+                <option value="">Sem status</option>
                 <option className="bg-gray-700 text-white">Lendo</option>
                 <option className="bg-gray-700 text-white">Completo</option>
                 <option className="bg-gray-700 text-white">Planejo Ler</option>
@@ -306,12 +316,13 @@ function ObraForm({
               <input
                 type="text"
                 id="status"
-                className={`block w-full px-3 py-2 bg-gray-700 border rounded-md shadow-sm text-white placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${
+                readOnly={somenteLeitura}
+                className={`field block w-full read-only:bg-slate-900/70 ${
                   errors.status ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="Em Andamento"
                 {...register("status", {
-                  required: "O status da leitura é obrigatório.",
+                  required: !somenteLeitura && "O status da obra é obrigatório.",
                 })}
               />
               {errors.status && (
@@ -326,7 +337,7 @@ function ObraForm({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="button button-primary w-full"
               >
                 {isSubmitting ? "Salvando..." : submitButtonText}
               </button>
@@ -345,10 +356,11 @@ function ObraForm({
               </div>
             )}
             <button
+              type="button"
               onClick={() => {
                 navigate("/biblioteca");
               }}
-              className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+              className="button button-secondary"
             >
               Voltar
             </button>

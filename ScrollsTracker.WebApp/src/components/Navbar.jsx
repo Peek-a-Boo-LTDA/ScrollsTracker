@@ -1,58 +1,43 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "../api";
+import { chaveSessao } from "../useSessao";
+import { Link, NavLink } from "react-router-dom";
 
-// 1. Importe a sua imagem como se fosse um módulo JavaScript.
-// O caminho relativo deve ser a partir DESTE arquivo (Navbar.jsx) até a sua imagem.
-// Ajuste o caminho '../assets/logo.jpg' se necessário.
 import logo from "../assets/logo.png";
 
 function Navbar() {
+  const queryClient = useQueryClient();
+  const logout = useMutation({
+    mutationFn: async () => {
+      const resposta = await apiFetch("/api/conta/logout", { method: "POST" });
+      if (!resposta.ok && resposta.status !== 401) throw new Error("Falha ao sair.");
+    },
+    onSuccess: async () => {
+      await queryClient.cancelQueries();
+      queryClient.setQueryData(chaveSessao, null);
+      queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== chaveSessao[0] });
+    },
+  });
   return (
-    <header className="bg-gray-200 text-black p-4 border-b-4 border-indigo-500 shadow-md">
-      {/* Container para alinhar os itens com margem automática */}
-      <div className="container mx-auto flex justify-between items-center">
-        {/* Logo (à esquerda) */}
-        <Link to="/" className="flex items-center gap-3">
-          {/* 2. Use a variável importada no atributo 'src' da tag <img> */}
-          <img
-            src={logo}
-            alt="ScrollsTracker Logo"
-            className="h-10 w-10 object-cover" // Ajustei o estilo para a imagem
-          />
-          <span className="text-xl font-bold text-gray-800">
-            ScrollsTracker
-          </span>
+    <header className="app-header">
+      <div className="page-width flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-3">
+        <Link to="/" className="flex items-center gap-3 font-semibold tracking-tight text-slate-100">
+          <img src={logo} alt="" className="size-9 rounded-lg bg-slate-200 object-contain p-0.5" />
+          <span>ScrollsTracker</span>
         </Link>
-
-        {/* Navegação (à direita) */}
-        <nav>
-          <ul className="flex items-center gap-6">
+        <nav aria-label="Navegação principal">
+          <ul className="flex flex-wrap items-center gap-1 sm:gap-2">
+            <li><NavLink end to="/" className="nav-item">Lançamentos</NavLink></li>
+            <li><NavLink to="/biblioteca" className="nav-item">Biblioteca</NavLink></li>
+            <li><NavLink to="/importar" className="nav-item">Importar</NavLink></li>
             <li>
-              <Link
-                to="/"
-                className="text-lg font-medium hover:text-indigo-700 transition-colors"
-              >
-                Lançamentos
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/biblioteca"
-                className="text-lg font-medium hover:text-indigo-700 transition-colors"
-              >
-                Biblioteca
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/importar"
-                className="text-lg font-medium hover:text-indigo-700 transition-colors"
-              >
-                Importar
-              </Link>
+              <button type="button" onClick={() => logout.mutate()} disabled={logout.isPending} className="nav-item nav-exit">
+                Sair
+              </button>
             </li>
           </ul>
         </nav>
+        {logout.isError && <p role="alert" className="w-full text-sm text-red-300">Falha ao sair. Tente novamente.</p>}
       </div>
     </header>
   );

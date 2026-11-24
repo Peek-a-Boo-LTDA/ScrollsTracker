@@ -1,19 +1,20 @@
 import { XCircleIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Navigate, useNavigate, useOutletContext } from "react-router-dom";
 import ObraForm from "../components/ObraForm";
 import { useState } from "react";
 import Modal from "../components/Modal";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+import { apiFetch } from "../api";
 
 function CadastrarObra() {
+  const { podeCadastrarObras } = useOutletContext();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const cadastrarObraApi = async (data) => {
-    console.log(JSON.stringify(data));
-    const response = await fetch(
-      `${baseUrl}/api/ScrollsTracker/CadastrarObra`,
+    const response = await apiFetch(
+      `/api/ScrollsTracker/CadastrarObra`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -28,8 +29,11 @@ function CadastrarObra() {
 
   const { mutate: cadastrarObra, isPending: isCadastrando } = useMutation({
     mutationFn: cadastrarObraApi,
-    onSuccess: (data) => {
-      console.log("Resposta do servidor:", data);
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["obras"] }),
+        queryClient.invalidateQueries({ queryKey: ["lancamentos"] }),
+      ]);
       setIsOpenCadastrar(true);
       // Poderia adicionar uma notificação de sucesso aqui (ex: react-toastify)
     },
@@ -42,9 +46,11 @@ function CadastrarObra() {
   const [isOpenCadastrar, setIsOpenCadastrar] = useState(false);
   const [isOpenError, setIsOpenError] = useState(false);
 
+  if (!podeCadastrarObras) return <Navigate to="/biblioteca" replace />;
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <h2 className="text-3xl font-bold text-white mb-6">
+    <div className="flex min-h-screen flex-col items-center px-2 py-8">
+      <h2 className="page-title mb-2">
         Cadastrar Nova Obra
       </h2>
       <ObraForm

@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+import { useOutletContext } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "../api";
 
 function ImportarObra() {
+  const { podeCadastrarObras } = useOutletContext();
+  const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState(null);
   const [message, setMessage] = useState("");
 
@@ -32,8 +36,8 @@ function ImportarObra() {
         const data = JSON.parse(jsonContent);
         console.log("Dados importados:", data);
 
-        const response = await fetch(
-          `${baseUrl}/api/ScrollsTracker/importar-obras`,
+        const response = await apiFetch(
+          `/api/ScrollsTracker/importar-obras`,
           {
             method: "POST",
             headers: {
@@ -45,10 +49,12 @@ function ImportarObra() {
 
         if (response.ok) {
           setMessage("Dados importados com sucesso!");
+          await Promise.all(["obras", "lancamentos", "obra"].map((chave) =>
+            queryClient.invalidateQueries({ queryKey: [chave] })
+          ));
         } else {
           setMessage("Erro ao importar os dados. Verifique o console.");
-          const errorData = await response.json();
-          console.error("Erro da API:", errorData);
+
         }
       } catch (error) {
         console.error("Erro ao processar o arquivo JSON:", error);
@@ -62,8 +68,8 @@ function ImportarObra() {
   const handleExport = async () => {
     try {
       // Busca os dados para exportar da API
-      const response = await fetch(
-        `${baseUrl}/api/ScrollsTracker/exportar-obras`
+      const response = await apiFetch(
+        `/api/ScrollsTracker/exportar-obras`
       );
       if (!response.ok) throw new Error("Erro ao buscar dados");
 
@@ -90,13 +96,13 @@ function ImportarObra() {
   };
 
   return (
-    <div className="flex items-center justify-center text-white p-6 rounded-lg shadow-lg w-full h-screen">
-      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-2xl">
+    <div className="page-width page-content flex justify-center">
+      <div className="surface w-full max-w-xl p-6 sm:p-8">
         <h3 className="text-2xl font-bold mb-4 border-b border-gray-700 pb-2">
-          Importar Obras via JSON
+          Biblioteca em JSON
         </h3>
 
-        <div className="mb-4">
+        {podeCadastrarObras && <div className="mb-4">
           <input
             type="file"
             accept=".json"
@@ -107,13 +113,13 @@ function ImportarObra() {
                  file:bg-blue-600 file:text-white
                  hover:file:bg-blue-500 cursor-pointer"
           />
-        </div>
+        </div>}
 
-        <div className="flex gap-3">
-          <button
+        <div className="flex flex-wrap gap-3">
+          {podeCadastrarObras && <button
             onClick={handleImport}
             disabled={!selectedFile}
-            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-colors duration-200
+            className={`button button-primary flex-1
                   ${
                     selectedFile
                       ? "bg-green-600 hover:bg-green-500"
@@ -121,10 +127,10 @@ function ImportarObra() {
                   }`}
           >
             Importar
-          </button>
+          </button>}
           <button
             onClick={handleExport}
-            className="flex-1 py-2 px-4 rounded-lg font-semibold bg-purple-600 hover:bg-purple-500 transition-colors duration-200"
+            className="button button-secondary flex-1"
           >
             Exportar
           </button>

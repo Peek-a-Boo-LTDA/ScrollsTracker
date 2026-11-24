@@ -1,13 +1,15 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using ScrollsTracker.Api.AutoMapperProfile;
 using ScrollsTracker.Api.Config;
+using ScrollsTracker.Api.Services;
 using ScrollsTracker.Application.Reference;
 using ScrollsTracker.Infra.Repository.Context;
 
 
 internal class Program
 {
-	private static void Main(string[] args)
+	private static async Task Main(string[] args)
 	{
 		var builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +44,17 @@ internal class Program
 
 		builder.Services.AddLogging();
 		builder.Services.AddCorsConfig();
-		builder.Services.AddControllers();
+		builder.Services.AddControllersWithViews();
+		builder.Services.AddContas(builder.Environment);
+
+		var diretorioChaves = builder.Configuration["DataProtection:KeysPath"];
+		if (!string.IsNullOrWhiteSpace(diretorioChaves))
+		{
+			builder.Services.AddDataProtection()
+				.SetApplicationName("ScrollsTracker")
+				.PersistKeysToFileSystem(new DirectoryInfo(diretorioChaves));
+		}
+		builder.Services.AddScoped<LeituraService>();
 		builder.Services.AddConfigService();
 		builder.Services.AddConfigFacade();
 		builder.Services.AddConfigJob();
@@ -62,13 +74,16 @@ internal class Program
 		using (var scope = app.Services.CreateScope())
 		{
 			var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-			db.Database.Migrate();
+			await db.Database.MigrateAsync();
+			await ContaConfig.ConfigurarAdministradorAsync(scope.ServiceProvider, builder.Configuration);
 		}
 
 		app.UseCors("PermitirFrontend");
 
 		app.UseHttpsRedirection();
+		app.UseAuthentication();
 		app.UseAuthorization();
+		app.UseRateLimiter();
 		app.MapControllers();
 		app.UseSwagger();
 		app.UseSwaggerUI();
@@ -81,6 +96,6 @@ internal class Program
 		// Fallback para index.html (rotas SPA)
 		app.MapFallbackToFile("index.html");
 
-		app.Run();
+		await app.RunAsync();
 	}
 }

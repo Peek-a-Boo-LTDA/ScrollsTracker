@@ -387,3 +387,8 @@ ScrollsTracker-WebApp/.vscode/extensions.json
 *.njsproj
 *.sln
 *.sw?
+
+# Dados da instância local do ScrollsTracker
+/.env
+/data/
+scrollstracker.db*

@@ -13,10 +13,8 @@ namespace ScrollsTracker.Domain.Models
 		public string? Titulo { get; set; }
 		public string? Descricao { get; set; }
 		public string? TotalCapitulos { get; set; }
-		public string? UltimoCapituloLido { get; set; }
 		public string? Imagem { get; set; }
 		public string? Status { get; set; }
-		public string? StatusLeitura { get; set; }
 		public DateTime DataAtualizacao { get; set; } = DateTime.Now;
 		public DateTime DataVerificacao { get; set; } = DateTime.Now;
 
@@ -33,17 +31,5 @@ namespace ScrollsTracker.Domain.Models
 			return 0;
 		}
 
-		public double GetUltimoCapituloLidoAsDouble()
-		{
-			if (string.IsNullOrEmpty(UltimoCapituloLido))
-			{
-				return 0;
-			}
-			if (double.TryParse(UltimoCapituloLido, out double result))
-			{
-				return result;
-			}
-			return 0;
-		}
 	}
 }

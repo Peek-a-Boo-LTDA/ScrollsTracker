@@ -1,21 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import MangaShelf from "../components/MangaShelf";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { useState, useMemo } from "react"; // useMemo é a chave aqui
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+import { apiFetch } from "../api";
 
 function Biblioteca() {
+  const { podeCadastrarObras } = useOutletContext();
   const [filtroTitulo, setFiltroTitulo] = useState("");
   const [filtroStatusLeitura, setFiltroStatusLeitura] = useState("");
 
   const [filtroStatusObra, setFiltroStatusObra] = useState("");
 
-  const { data: todasAsObras = [], isLoading } = useQuery({
+  const { data: todasAsObras = [], isLoading, isError } = useQuery({
     queryKey: ["obras"],
     queryFn: async () => {
-      const res = await fetch(`${baseUrl}/api/ScrollsTracker/Obras`);
-      console.log(baseUrl);
+      const res = await apiFetch(`/api/ScrollsTracker/Obras`);
+      if (!res.ok) throw new Error("Falha ao carregar a biblioteca.");
       return res.json();
     },
   });
@@ -60,31 +61,35 @@ function Biblioteca() {
     );
   }
 
+  if (isError) return <p role="alert" className="p-4 text-white">Falha ao carregar a biblioteca.</p>;
+
   return (
-    <div className="space-y-4 p-4 min-h-screen">
-      <div className="flex justify-between items-center pl-2 pr-2 mb-1 pt-4">
-        <h1 className="text-white text-2xl">Biblioteca</h1>
-        <Link
+    <div className="page-width page-content">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="page-title">Biblioteca</h1>
+        {podeCadastrarObras && <Link
           to="/cadastrar-obra"
-          className="text-white lg:block bg-transparent text-primary border hover:bg-primary border-primary hover:text-darkmode px-4 py-2 rounded-lg cursor-pointer"
+          className="button button-primary"
         >
           Nova Obra
-        </Link>
+        </Link>}
       </div>
 
       {/* --- SEÇÃO DE FILTROS --- */}
-      <div className="flex flex-wrap gap-4 p-2">
+      <div className="surface filter-bar">
         {/* Filtro Título */}
         <input
           type="text"
+          aria-label="Buscar por título"
           placeholder="Buscar por título..."
-          className="p-2 rounded-lg bg-gray-700 text-white flex-grow md:flex-grow-0 md:w-1/3"
+          className="field min-w-0 flex-1 basis-52"
           value={filtroTitulo}
           onChange={(e) => setFiltroTitulo(e.target.value)}
         />
 
         <select
-          className="p-2 rounded-lg bg-gray-700 text-white"
+          className="field min-w-0 flex-1 basis-44"
+          aria-label="Status de leitura"
           value={filtroStatusLeitura}
           onChange={(e) => setFiltroStatusLeitura(e.target.value)}
         >
@@ -96,7 +101,8 @@ function Biblioteca() {
         </select>
 
         <select
-          className="p-2 rounded-lg bg-gray-700 text-white"
+          className="field min-w-0 flex-1 basis-44"
+          aria-label="Status da obra"
           value={filtroStatusObra}
           onChange={(e) => setFiltroStatusObra(e.target.value)}
         >
@@ -107,11 +113,9 @@ function Biblioteca() {
         </select>
       </div>
 
-      <div className="border-b-2 border-white pl-2 pr-2">
-        <h1 className="text-white text-lg">Obras:</h1>
-      </div>
-
-      <MangaShelf obras={obrasFiltradas} />
+      {obrasFiltradas.length > 0 ? <MangaShelf obras={obrasFiltradas} /> : (
+        <p className="surface empty-state">Nenhuma obra encontrada.</p>
+      )}
     </div>
   );
 }
