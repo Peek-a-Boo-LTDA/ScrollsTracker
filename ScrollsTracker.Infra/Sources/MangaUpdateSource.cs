@@ -1,105 +1,50 @@
-﻿using FuzzySharp;
+using System.Globalization;
+using System.Net.Http.Json;
 using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
+using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate;
-using ScrollsTracker.Infra.Model;
-using System.Text;
-using System.Text.Json;
 
-namespace ScrollsTracker.Infra.Sources
+namespace ScrollsTracker.Infra.Sources;
+
+public class MangaUpdateSource(HttpClient httpClient) : IObraSource
 {
-	public class MangaUpdateSource : IObraSource
+	private const string Api = "https://api.mangaupdates.com/v1/series";
+	public EnumSources SourceName => EnumSources.MangaUpdate;
+
+	public async Task<IReadOnlyList<SearchResult>> BuscarAsync(string titulo, CancellationToken cancellationToken)
 	{
-		public EnumSources SourceName => EnumSources.MangaUpdate;
-		private readonly HttpClient _httpClient;
-		//TODO add logger
-		public MangaUpdateSource(HttpClient httpClient) 
-		{
-			_httpClient = httpClient;
-		}
+		using var resposta = await httpClient.PostAsJsonAsync($"{Api}/search",
+			new { search = titulo, perpage = 8 }, cancellationToken);
+		resposta.EnsureSuccessStatusCode();
 
-		public async Task<SearchResult?> ObterObraAsync(string titulo)
-		{
-			var search = await ProcurarObraAsync(titulo);
-			if (search == null || search.Results.Count == 0)
+		var busca = await resposta.Content.ReadFromJsonAsync<MangaUpdateSearchResponse>(cancellationToken);
+		return busca?.Results?.Select(item => item.Record)
+			.Where(item => item is not null && item.SeriesId > 0 && !string.IsNullOrWhiteSpace(item.Title))
+			.Select(item => new SearchResult(new Obra
 			{
-				return null;
-			}
-
-			var result = FiltrarResultados(search.Results, titulo, out var score);
-
-			if (result == null || result.Record == null)
-			{
-				return null;
-			}
-
-			var serie = await ObterObraPorIdAsync(result.Record.SeriesId);
-
-			if(serie == null)
-			{
-				return null;
-			}
-
-			return new SearchResult(serie.ToDomain(), score, SourceName);
-		}
-
-		private MangaUpdateResultsResponse? FiltrarResultados(IList<MangaUpdateResultsResponse> results, string titulo, out int score)
-		{
-			var melhorPesquisa = results.FirstOrDefault();
-			int melhorPontuacao = 0;
-
-			foreach (var result in results)
-			{
-				if (result.Record == null || result.Record.SeriesId == 0)
-				{
-					continue;
-				}
-
-				int pontuacao = Fuzz.Ratio(result.Record.Title, titulo);
-				if (result.Record.Title != null && pontuacao >= melhorPontuacao)
-				{
-					melhorPontuacao = pontuacao;
-					melhorPesquisa = result;
-				}
-			}
-
-			score = melhorPontuacao;
-			return melhorPesquisa ?? null;
-		}
-
-		private async Task<MangaUpdateSeriesResponse?> ObterObraPorIdAsync(long id)
-		{
-			var url = $"https://api.mangaupdates.com/v1/series/{id}";
-
-			var response = await _httpClient.GetAsync(url);
-			if (!response.IsSuccessStatusCode)
-			{
-				var error = await response.Content.ReadAsStringAsync();
-				throw new Exception($"Erro {response.StatusCode}: {error}");
-			}
-
-			var responseContent = await response.Content.ReadAsStringAsync();
-			return JsonSerializer.Deserialize<MangaUpdateSeriesResponse>(responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-		}
-
-
-		private async Task<MangaUpdateSearchResponse?> ProcurarObraAsync(string titulo)
-		{
-			var url = "https://api.mangaupdates.com/v1/series/search";
-
-			var requestBody = new { search = titulo };
-			var json = JsonSerializer.Serialize(requestBody);
-			using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-			var response = await _httpClient.PostAsync(url, content);
-			if (!response.IsSuccessStatusCode)
-			{
-				var error = await response.Content.ReadAsStringAsync();
-				throw new Exception($"Erro {response.StatusCode}: {error}");
-			}
-
-			var responseContent = await response.Content.ReadAsStringAsync();
-			return JsonSerializer.Deserialize<MangaUpdateSearchResponse>(responseContent);
-		}
+				Titulo = item.Title,
+				TitulosAlternativos = item.Associated?.Select(t => t.Title).OfType<string>().ToList() ?? [],
+				VinculosExternos = new() { [SourceName] = item.SeriesId.ToString(CultureInfo.InvariantCulture) }
+			}, SourceName, LerAno(item.Year), RequerDetalhes: true, Formato: item.Type)).ToList() ?? [];
 	}
+
+	public async Task<SearchResult?> ObterPorIdAsync(string id, CancellationToken cancellationToken)
+	{
+		if (!long.TryParse(id, NumberStyles.None, CultureInfo.InvariantCulture, out var seriesId) || seriesId <= 0)
+			return null;
+
+		var serie = await httpClient.GetFromJsonAsync<MangaUpdateSeriesResponse>($"{Api}/{seriesId}", cancellationToken);
+		if (string.IsNullOrWhiteSpace(serie?.Title))
+			return null;
+
+		var obra = serie.ToDomain();
+		obra.VinculosExternos[SourceName] = seriesId.ToString(CultureInfo.InvariantCulture);
+		return new SearchResult(obra, SourceName, LerAno(serie.Year), Formato: serie.Type);
+	}
+
+	public async Task<SearchResult> CompletarAsync(SearchResult resultado, CancellationToken cancellationToken) =>
+		await ObterPorIdAsync(resultado.Obra.VinculosExternos[SourceName], cancellationToken) ?? resultado;
+
+	private static int? LerAno(string? ano) => int.TryParse(ano, out var numero) ? numero : null;
 }

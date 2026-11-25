@@ -209,6 +209,28 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ScrollsTracker.Domain.Models.LancamentoCapitulo", b =>
+                {
+                    b.Property<int>("ObraId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Numero")
+                        .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DetectadoEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Fonte")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ObraId", "Numero");
+
+                    b.HasIndex("DetectadoEm");
+
+                    b.ToTable("Lancamentos");
+                });
+
             modelBuilder.Entity("ScrollsTracker.Domain.Models.Obra", b =>
                 {
                     b.Property<int>("Id")
@@ -224,6 +246,9 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                     b.Property<string>("Descricao")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("FonteUltimoCapitulo")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Imagem")
                         .HasColumnType("TEXT");
 
@@ -234,16 +259,36 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Titulo")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.PrimitiveCollection<string>("TitulosAlternativos")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("'[]'");
+
                     b.Property<string>("TotalCapitulos")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("UltimoCapituloDetectadoEm")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UltimoCapituloLido")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("VinculosExternos")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("'{}'");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("DataVerificacao");
 
                     b.HasIndex("Titulo")
                         .IsUnique();
@@ -321,6 +366,17 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ScrollsTracker.Domain.Models.LancamentoCapitulo", b =>
+                {
+                    b.HasOne("ScrollsTracker.Domain.Models.Obra", "Obra")
+                        .WithMany()
+                        .HasForeignKey("ObraId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Obra");
                 });
 
             modelBuilder.Entity("ScrollsTracker.Infra.Repository.Context.UsuarioObra", b =>

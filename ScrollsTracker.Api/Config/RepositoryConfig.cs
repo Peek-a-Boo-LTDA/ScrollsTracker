@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ScrollsTracker.Api.Repository;
+using ScrollsTracker.Api.Services;
 using ScrollsTracker.Domain.Interfaces.Repository;
 using ScrollsTracker.Infra.Repository.Context;
 
@@ -27,6 +28,7 @@ namespace ScrollsTracker.Api.Config
 			});
 
 			services.AddScoped<IObraRepository, ObraRepository>();
+			services.AddScoped<BibliotecaService>();
 		}
     }
 }

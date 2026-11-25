@@ -1,0 +1,22 @@
+name: Validação
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet test ScrollsTracker.Tests/ScrollsTracker.Tests.csproj --configuration Release
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ScrollsTracker.WebApp/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: ScrollsTracker.WebApp

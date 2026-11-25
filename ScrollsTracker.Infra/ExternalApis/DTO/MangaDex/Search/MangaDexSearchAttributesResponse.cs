@@ -5,12 +5,21 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Search
 	public class MangaDexSearchAttributesResponse
 	{
 		[JsonPropertyName("title")]
-		public Dictionary<string, string> Title { get; set; }
+		public Dictionary<string, string>? Title { get; set; }
+
+		[JsonPropertyName("altTitles")]
+		public List<Dictionary<string, string>>? AltTitles { get; set; }
 
 		[JsonPropertyName("description")]
-		public Dictionary<string, string> Description { get; set; }
+		public Dictionary<string, string>? Description { get; set; }
 
 		[JsonPropertyName("status")]
-		public string Status { get; set; }
+		public string? Status { get; set; }
+
+		[JsonPropertyName("year")]
+		public int? Year { get; set; }
+
+		[JsonPropertyName("links")]
+		public Dictionary<string, string?>? Links { get; set; }
 	}
 }

@@ -9,5 +9,16 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate
 
 		[JsonPropertyName("title")]
 		public string? Title { get; set; }
+
+		[JsonPropertyName("year")]
+		public string? Year { get; set; }
+
+		[JsonPropertyName("type")]
+		public string? Type { get; set; }
+
+		[JsonPropertyName("associated")]
+		public List<MangaUpdateAssociatedTitle>? Associated { get; set; }
 	}
+
+	public sealed record MangaUpdateAssociatedTitle(string? Title);
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ScrollsTracker.Application.Commands;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Interfaces.Repository;
+using ScrollsTracker.Domain.Models;
 
 namespace ScrollsTracker.Application.Handlers
 {
@@ -28,7 +29,11 @@ namespace ScrollsTracker.Application.Handlers
 		{
 			_logger.LogInformation("Iniciando processo de registro para a obra: {Titulo}", request.Titulo);
 			//TODO: Add try catch?
-			var novaObra = await _aggregatorService.BuscarObraAgregadaAsync(request.Titulo);
+			var busca = await _aggregatorService.BuscarCandidatosAsync(request.Titulo, [], cancellationToken);
+			if (busca.Candidatos.Count > 0)
+				throw new InvalidOperationException("Selecione uma obra entre os candidatos da busca externa antes de cadastrar.");
+
+			var novaObra = busca.Obra ?? new Obra { Titulo = request.Titulo.Trim() };
 
 			var executado = await _obraRepository.AddAsync(novaObra);
 

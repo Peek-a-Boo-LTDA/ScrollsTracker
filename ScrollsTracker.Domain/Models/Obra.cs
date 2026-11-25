@@ -1,5 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Text.Json.Serialization;
+using ScrollsTracker.Domain.Enum;
 
 namespace ScrollsTracker.Domain.Models
 {
@@ -11,8 +14,13 @@ namespace ScrollsTracker.Domain.Models
 
 		[Required]
 		public string? Titulo { get; set; }
+		public List<string> TitulosAlternativos { get; set; } = [];
+		public Dictionary<EnumSources, string> VinculosExternos { get; set; } = [];
 		public string? Descricao { get; set; }
 		public string? TotalCapitulos { get; set; }
+		[JsonConverter(typeof(JsonStringEnumConverter<EnumSources>))]
+		public EnumSources? FonteUltimoCapitulo { get; set; }
+		public DateTime? UltimoCapituloDetectadoEm { get; set; }
 		public string? Imagem { get; set; }
 		public string? Status { get; set; }
 		public DateTime DataAtualizacao { get; set; } = DateTime.Now;
@@ -20,16 +28,14 @@ namespace ScrollsTracker.Domain.Models
 
 		public double GetTotalCapitulosAsDouble()
 		{
-			if (string.IsNullOrEmpty(TotalCapitulos))
-			{
-				return 0;
-			}
-			if (double.TryParse(TotalCapitulos, out double result))
-			{
-				return result;
-			}
-			return 0;
+			return InterpretarCapitulo(TotalCapitulos) is decimal capitulo ? (double)capitulo : 0;
 		}
 
+		public static decimal? InterpretarCapitulo(string? valor) =>
+			decimal.TryParse(valor?.Trim().Replace(',', '.'), NumberStyles.AllowDecimalPoint,
+				CultureInfo.InvariantCulture, out var capitulo) && capitulo >= 0 ? capitulo : null;
+
+		public static string FormatarCapitulo(decimal numero) =>
+			numero.ToString("0.############################", CultureInfo.InvariantCulture);
 	}
 }

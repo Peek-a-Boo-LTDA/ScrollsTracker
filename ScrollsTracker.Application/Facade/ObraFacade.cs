@@ -18,11 +18,22 @@ namespace ScrollsTracker.Application.Facade
 
 		public Task<Obra> BuscarObraAgregadaAsync(string titulo) => _obraAggregator.BuscarObraAgregadaAsync(titulo);
 
+		public Task<BuscaExternaResult> BuscarCandidatosAsync(string titulo, IReadOnlyList<string> titulosAlternativos,
+			CancellationToken cancellationToken, string? usuarioParaSelecionar = null) =>
+			_obraAggregator.BuscarCandidatosAsync(titulo, titulosAlternativos, cancellationToken, usuarioParaSelecionar);
+
+		public Task<Obra?> SelecionarCandidatoAsync(Guid chave, string usuarioId, CancellationToken cancellationToken) =>
+			_obraAggregator.SelecionarCandidatoAsync(chave, usuarioId, cancellationToken);
+
 		public Task<int> DeleteObraById(int id) => _repo.DeleteObraByIdAsync(id);
 
 		public Task<Obra?> GetObraByIdAsync(int id) => _repo.GetObraByIdAsync(id);
 
-		public Task<List<Obra>> ObterLancamentosAsync() => _repo.ObterLancamentosAsync();
+		public Task<List<LancamentoCapitulo>> ObterLancamentosRecentesAsync(CancellationToken cancellationToken) =>
+			_repo.ObterLancamentosRecentesAsync(cancellationToken);
+
+		public Task<List<LancamentoCapitulo>> ObterHistoricoAsync(int obraId, CancellationToken cancellationToken) =>
+			_repo.ObterHistoricoAsync(obraId, cancellationToken);
 
 		public Task<List<Obra>> ObterTodasObrasAsync() => _repo.ObterTodasObrasAsync();
 

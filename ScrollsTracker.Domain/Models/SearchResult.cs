@@ -1,19 +1,15 @@
 ﻿using ScrollsTracker.Domain.Enum;
-using ScrollsTracker.Domain.Models;
 
-namespace ScrollsTracker.Infra.Model
-{
-	public class SearchResult
-	{
-		public Obra Obra { get; set; }
-		public int Score { get; set; }
-		public EnumSources Source { get; set; }
+namespace ScrollsTracker.Domain.Models;
 
-		public SearchResult(Obra obra, int score, EnumSources source)
-		{
-			Obra = obra;
-			Score = score;
-			Source = source;
-		}
-	}
-}
+public sealed record SearchResult(
+	Obra Obra,
+	EnumSources Source,
+	int? Ano = null,
+	IReadOnlyDictionary<EnumSources, string>? Referencias = null,
+	bool RequerDetalhes = false,
+	string? Formato = null);
+
+public sealed record CandidatoObra(Obra Obra, int? Ano, string? Formato, IReadOnlyList<string> Fontes, Guid? Chave = null);
+
+public sealed record BuscaExternaResult(Obra? Obra, IReadOnlyList<CandidatoObra> Candidatos);

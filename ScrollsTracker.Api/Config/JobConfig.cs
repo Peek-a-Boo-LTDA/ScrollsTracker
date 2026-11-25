@@ -6,6 +6,7 @@ namespace ScrollsTracker.Api.Config
 	{
 		public static void AddConfigJob(this IServiceCollection services)
 		{
+			services.AddSingleton<AtualizacaoDeObras>();
 			services.AddHostedService<AtualizadorDeObrasJob>();
 		}
 	}

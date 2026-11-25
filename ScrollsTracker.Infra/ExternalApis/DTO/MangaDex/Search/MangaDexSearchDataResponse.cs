@@ -9,5 +9,11 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaDex.Search
 
 		[JsonPropertyName("attributes")]
 		public MangaDexSearchAttributesResponse? Attributes { get; set; }
+
+		[JsonPropertyName("relationships")]
+		public List<MangaDexRelationship>? Relationships { get; set; }
 	}
+
+	public sealed record MangaDexRelationship(string Type, MangaDexCoverFile? Attributes);
+	public sealed record MangaDexCoverFile(string? FileName);
 }

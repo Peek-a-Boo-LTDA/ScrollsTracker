@@ -5,5 +5,7 @@
 		MangaDex,
 		MangaUpdate,
 		MangaKatana,
+		MangaHere,
+		Kitsu,
 	}
 }

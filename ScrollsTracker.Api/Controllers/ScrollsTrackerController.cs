@@ -9,8 +9,13 @@ using ScrollsTracker.Api.Services;
 using ScrollsTracker.Infra.Repository.Context;
 using ScrollsTracker.Api.Requests;
 using ScrollsTracker.Application.Commands;
+using ScrollsTracker.Application.HostedServices;
 using ScrollsTracker.Domain.Interfaces.Facade;
 using ScrollsTracker.Domain.Models;
+using ScrollsTracker.Domain.Enum;
+using ScrollsTracker.Domain.Utils;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 
 namespace ScrollsTracker.Api.Controllers
 {
@@ -49,10 +54,40 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(await _leituras.ComLeituraAsync(await _obraFacade.ProcurarObrasAsync(titulo), UsuarioId));
 		}
 
+		[HttpGet("Biblioteca")]
+		public async Task<ActionResult<PaginaBiblioteca>> BuscarBibliotecaAsync(
+			[FromServices] BibliotecaService biblioteca, CancellationToken cancellationToken,
+			[FromQuery, StringLength(300)] string? titulo = null, [FromQuery, StringLength(40)] string? statusObra = null,
+			[FromQuery, StringLength(40)] string? statusLeitura = null,
+			[FromQuery, Range(1, int.MaxValue)] int pagina = 1, [FromQuery, Range(1, 60)] int tamanho = 18)
+		{
+			return Ok(await biblioteca.BuscarAsync(UsuarioId, titulo, statusObra, statusLeitura, pagina, tamanho, cancellationToken));
+		}
+
 		[HttpGet("ProcurarObraNasApisExternas")]
 		public async Task<IActionResult> ProcurarObraApisExternasAsync(string titulo)
 		{
 			return Ok(await _obraFacade.BuscarObraAgregadaAsync(titulo));
+		}
+
+		[HttpGet("CandidatosExternos")]
+		public async Task<ActionResult<BuscaExternaResult>> BuscarCandidatosAsync(
+			[FromQuery, StringLength(300, MinimumLength = 1)] string titulo,
+			[FromQuery] string[]? titulosAlternativos,
+			CancellationToken cancellationToken, [FromQuery] bool resumir = false)
+		{
+			if (string.IsNullOrWhiteSpace(titulo))
+				return BadRequest("Informe um título.");
+
+			return Ok(await _obraFacade.BuscarCandidatosAsync(titulo, titulosAlternativos ?? [], cancellationToken,
+				resumir ? UsuarioId : null));
+		}
+
+		[HttpGet("CandidatosExternos/{chave:guid}")]
+		public async Task<ActionResult<Obra>> SelecionarCandidatoAsync(Guid chave, CancellationToken cancellationToken)
+		{
+			var obra = await _obraFacade.SelecionarCandidatoAsync(chave, UsuarioId, cancellationToken);
+			return obra is null ? NotFound() : Ok(obra);
 		}
 
 		[HttpGet("ObterObra/{id}")]
@@ -67,10 +102,38 @@ namespace ScrollsTracker.Api.Controllers
 		}
 
 		[HttpGet("ObterLancamentos")]
-		public async Task<IActionResult> GetLancamentosAsync()
+		public async Task<IActionResult> GetLancamentosAsync(CancellationToken cancellationToken)
 		{
-			return Ok(await _leituras.ComLeituraAsync(await _obraFacade.ObterLancamentosAsync(), UsuarioId));
+			var lancamentos = (await _obraFacade.ObterLancamentosRecentesAsync(cancellationToken)).DistinctBy(item => item.ObraId).ToList();
+			var porObra = lancamentos.ToDictionary(item => item.ObraId);
+			var obras = await _leituras.ComLeituraAsync(lancamentos.Select(item => item.Obra).ToList(),
+				UsuarioId, cancellationToken);
+			var novidades = new List<ObraResponse>();
+			foreach (var obra in obras)
+			{
+				var lancamento = porObra[obra.Id];
+				if (Obra.InterpretarCapitulo(lancamento.Numero) is not decimal numero
+					|| numero <= (Obra.InterpretarCapitulo(obra.UltimoCapituloLido) ?? 0))
+					continue;
+
+				obra.LancamentoRecente = MapearLancamento(lancamento);
+				novidades.Add(obra);
+			}
+
+			return Ok(novidades);
 		}
+
+		[HttpGet("Obras/{id:int}/lancamentos")]
+		public async Task<ActionResult<List<LancamentoResponse>>> BuscarHistoricoAsync(int id, CancellationToken cancellationToken)
+		{
+			if (!await _db.Obras.AnyAsync(obra => obra.Id == id, cancellationToken))
+				return NotFound();
+			var historico = await _obraFacade.ObterHistoricoAsync(id, cancellationToken);
+			return Ok(historico.Select(MapearLancamento).ToList());
+		}
+
+		private static LancamentoResponse MapearLancamento(LancamentoCapitulo lancamento) =>
+			new(lancamento.Numero, lancamento.Fonte.ToString(), lancamento.DetectadoEm);
 
 		[Authorize(Policy = ContaConfig.PodeCadastrarObras)]
 		[HttpPost("ProcurarECadastrarObra")]
@@ -96,7 +159,8 @@ namespace ScrollsTracker.Api.Controllers
             {
 				await using var transacao = await _db.Database.BeginTransactionAsync();
 				var obra = _mapper.Map<Obra>(obraRequest);
-				obra.Titulo = obra.Titulo!.Trim();
+				AplicarIdentidade(obra, obraRequest);
+				AplicarOrigemDoCapitulo(obra, obraRequest);
 				var result = await _obraFacade.CadastrarObraAsync(obra);
 				if (obraRequest.UltimoCapituloLido != null || obraRequest.StatusLeitura != null)
 					await _leituras.AtualizarAsync(obra.Id, UsuarioId, obraRequest);
@@ -119,8 +183,10 @@ namespace ScrollsTracker.Api.Controllers
 			if (obra == null)
 				return NotFound();
 
+			var capituloAnterior = Obra.InterpretarCapitulo(obra.TotalCapitulos);
 			_mapper.Map(obraRequest, obra);
-			obra.Titulo = obra.Titulo!.Trim();
+			AplicarIdentidade(obra, obraRequest);
+			AplicarOrigemDoCapitulo(obra, obraRequest, capituloAnterior);
 			await _leituras.AtualizarAsync(id, UsuarioId, obraRequest);
 			try
 			{
@@ -193,7 +259,8 @@ namespace ScrollsTracker.Api.Controllers
 				if (obra == null)
 				{
 					obra = _mapper.Map<Obra>(entrada);
-					obra.Titulo = titulo;
+					AplicarIdentidade(obra, entrada);
+					AplicarOrigemDoCapitulo(obra, entrada);
 					_db.Obras.Add(obra);
 					await _db.SaveChangesAsync();
 				}
@@ -207,22 +274,58 @@ namespace ScrollsTracker.Api.Controllers
 			return Ok(entradas.Count);
 		}
 
+		private static void AplicarIdentidade(Obra obra, ObraRequest entrada)
+		{
+			obra.Titulo = entrada.Titulo!.Trim();
+			obra.TitulosAlternativos = StringUtils.LimparTitulosAlternativos(
+				obra.Titulo, entrada.TitulosAlternativos ?? obra.TitulosAlternativos);
+
+			if (entrada.VinculosExternos is not { } vinculos)
+				return;
+
+			obra.VinculosExternos = new();
+			if (vinculos.TryGetValue(EnumSources.MangaDex, out var mangaDex)
+				&& Guid.TryParseExact(mangaDex, "D", out var uuid))
+			{
+				obra.VinculosExternos[EnumSources.MangaDex] = uuid.ToString("D");
+			}
+
+			foreach (var fonte in new[] { EnumSources.MangaUpdate, EnumSources.Kitsu })
+			{
+				if (vinculos.TryGetValue(fonte, out var id)
+					&& long.TryParse(id, NumberStyles.None, CultureInfo.InvariantCulture, out var numero) && numero > 0)
+				{
+					obra.VinculosExternos[fonte] = numero.ToString(CultureInfo.InvariantCulture);
+				}
+			}
+		}
+
+		private static void AplicarOrigemDoCapitulo(Obra obra, ObraRequest entrada, decimal? anterior = null)
+		{
+			var numero = Obra.InterpretarCapitulo(obra.TotalCapitulos);
+			if (numero != anterior)
+			{
+				obra.FonteUltimoCapitulo = null;
+				obra.UltimoCapituloDetectadoEm = null;
+			}
+
+			if (numero.HasValue && entrada.FonteUltimoCapitulo is (EnumSources.MangaDex or EnumSources.MangaUpdate
+				or EnumSources.MangaKatana or EnumSources.MangaHere)
+				&& obra.FonteUltimoCapitulo != entrada.FonteUltimoCapitulo)
+			{
+				obra.FonteUltimoCapitulo = entrada.FonteUltimoCapitulo;
+				obra.UltimoCapituloDetectadoEm = DateTime.UtcNow;
+			}
+		}
+
 		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]
 		[HttpPost("atualizar-obras")]
-		public async Task<IActionResult> AtualizarObrasAsync()
+		public async Task<IActionResult> AtualizarObrasAsync([FromServices] AtualizacaoDeObras atualizacao,
+			CancellationToken cancellationToken)
 		{
-			var command = new AtualizarObrasCommand();
-
-			try
-			{
-				await _mediator.Send(command);
-
-				return Ok();
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.ToString());
-			}
+			if (!await atualizacao.TentarExecutarAsync(cancellationToken))
+				return Conflict("Já há uma rodada de atualização em execução.");
+			return Ok();
 		}
 
 		// TODO: Refatorar?

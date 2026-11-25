@@ -26,9 +26,7 @@ function Home() {
   return (
     <section className="page-width page-content">
       <h1 className="page-title">Últimos lançamentos</h1>
-      {obras.length > 0 ? <MangaShelf obras={obras} /> : (
-        <p className="surface empty-state">Nenhum lançamento recente.</p>
-      )}
+      <MangaShelf obras={obras} mensagemVazia="Nenhum lançamento recente por ler." />
     </section>
   );
 }

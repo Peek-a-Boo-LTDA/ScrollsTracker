@@ -1,147 +1,82 @@
-﻿using ScrollsTracker.Domain.Enum;
-using ScrollsTracker.Domain.Interfaces;
+using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Models;
-using ScrollsTracker.Infra.Model;
+using ScrollsTracker.Domain.Utils;
 
-namespace ScrollsTracker.Application.Services.Filter
+namespace ScrollsTracker.Application.Services.Filter;
+
+internal static class ObraFilter
 {
-	public class ObraFilter : IObraFilter
+	private static readonly EnumSources[] Catalogo = [EnumSources.MangaUpdate, EnumSources.Kitsu, EnumSources.MangaDex];
+	private static readonly EnumSources[] Capas = [.. Catalogo, EnumSources.MangaKatana, EnumSources.MangaHere];
+	private static readonly EnumSources[] FontesDeCapitulos =
+		[EnumSources.MangaDex, EnumSources.MangaKatana, EnumSources.MangaHere, EnumSources.MangaUpdate];
+
+	public static LancamentoCapitulo? Aplicar(Obra obra, IReadOnlyList<SearchResult> resultados)
 	{
-		private readonly Obra _obra;
-		private int Score = 0;
+		obra.Descricao = EscolherCampo(resultados, Catalogo, item => item.Descricao) ?? obra.Descricao;
+		obra.Status = EscolherCampo(resultados, Catalogo, item => NormalizarStatus(item.Status)) ?? obra.Status;
+		obra.Imagem = EscolherCampo(resultados, Capas, item => item.Imagem) ?? obra.Imagem;
 
-		public ObraFilter(string titulo)
+		foreach (var resultado in resultados)
 		{
-			_obra = new Obra { Titulo = titulo };
+			foreach (var vinculo in resultado.Obra.VinculosExternos)
+				obra.VinculosExternos.TryAdd(vinculo.Key, vinculo.Value);
 		}
 
-		public ObraFilter(SearchResult search)
+		var capitulo = resultados
+			.Where(item => FontesDeCapitulos.Contains(item.Source))
+			.Select(item => (Numero: Obra.InterpretarCapitulo(item.Obra.TotalCapitulos), Fonte: item.Source))
+			.Where(item => item.Numero.HasValue)
+			.OrderByDescending(item => item.Numero)
+			.ThenBy(item => Array.IndexOf(FontesDeCapitulos, item.Fonte))
+			.FirstOrDefault();
+
+		var anterior = Obra.InterpretarCapitulo(obra.TotalCapitulos);
+		if (capitulo.Numero is not decimal numero || (anterior.HasValue && numero < anterior.Value))
+			return null;
+
+		var agora = DateTime.UtcNow;
+		if (anterior != numero || obra.FonteUltimoCapitulo is null)
 		{
-			_obra = search.Obra;
-			Score = search.Score;
+			obra.TotalCapitulos = Obra.FormatarCapitulo(numero);
+			obra.FonteUltimoCapitulo = capitulo.Fonte;
+			obra.UltimoCapituloDetectadoEm = agora;
 		}
 
-		public ObraFilter(Obra obra)
+		if (numero > 0 && anterior != numero)
+			obra.DataAtualizacao = agora.ToLocalTime();
+
+		return anterior is > 0 && numero > anterior.Value
+			? new LancamentoCapitulo { ObraId = obra.Id, Numero = obra.TotalCapitulos!, Fonte = capitulo.Fonte, DetectadoEm = agora }
+			: null;
+	}
+
+	public static IEnumerable<string> Nomes(Obra obra) =>
+		obra.TitulosAlternativos.Prepend(obra.Titulo ?? "");
+
+	public static IEnumerable<string> NomesNormalizados(Obra obra) =>
+		Nomes(obra).Select(StringUtils.NormalizarTitulo).Where(nome => nome.Length > 0);
+
+	private static string? EscolherCampo(IReadOnlyList<SearchResult> resultados, IEnumerable<EnumSources> prioridade,
+		Func<Obra, string?> campo) =>
+		prioridade.Select(fonte => resultados.FirstOrDefault(item => item.Source == fonte))
+			.OfType<SearchResult>().Select(item => campo(item.Obra))
+			.FirstOrDefault(valor => !string.IsNullOrWhiteSpace(valor));
+
+	private static string? NormalizarStatus(string? status)
+	{
+		var texto = status?.Trim().ToLowerInvariant();
+		return texto switch
 		{
-			_obra = obra;
-		}
-
-		public Obra ObraFiltrada => _obra;
-
-		public void Filtrar(SearchResult search)
-		{
-			//FiltrarTituloObraNova(search);
-			FiltrarDescricao(search);
-			FiltrarTotalCapitulos(search);
-			FiltrarImagem(search);
-			FiltrarStatus(search);
-			Score = search.Score;
-		}
-
-		public int Atualizar(SearchResult search)
-		{
-			FiltrarDescricao(search);
-			var novoCapLancado = FiltrarTotalCapitulos(search);
-			FiltrarImagem(search);
-			FiltrarStatus(search);
-
-			return novoCapLancado ? 1 : 0;
-		}
-
-		private void FiltrarImagem(SearchResult search)
-		{
-			if (string.IsNullOrEmpty(_obra.Imagem))
-			{
-				_obra.Imagem = search.Obra.Imagem;
-			}
-
-			if (search.Score > Score && !string.IsNullOrEmpty(search.Obra.Imagem))
-			{
-				_obra.Imagem = search.Obra.Imagem;
-			}
-		}
-
-		private void FiltrarStatus(SearchResult search)
-		{
-			if (string.IsNullOrEmpty(_obra.Status))
-			{
-				_obra.Status = search.Obra.Status;
-			}
-
-			//TODO aqui talvez fique melhor por sources
-			if (search.Score > Score && !string.IsNullOrEmpty(search.Obra.Status))
-			{
-				_obra.Status = LimparStatus(search.Obra.Status);
-			}
-		}
-
-		private string? LimparStatus(string status)
-		{
-			if (status.Length <= 20)
-			{
-				return status;
-			}
-
-			if (status.ToLowerInvariant().Contains("ongoing"))
-			{
-				return "ongoing";
-			} 
-			else if (status.ToLowerInvariant().Contains("hiatu"))
-			{
-				return "Hiatus";
-			}
-			else if (status.ToLowerInvariant().Contains("hiatu"))
-			{
-				return "Complete";
-			}
-			else
-			{
-				return status;
-			}
-		}
-
-		private bool FiltrarTotalCapitulos(SearchResult search)
-		{
-			if ((_obra.GetTotalCapitulosAsDouble() == 0
-				|| search.Obra.GetTotalCapitulosAsDouble() > _obra.GetTotalCapitulosAsDouble())
-				&& search.Score >= Score)
-			{
-				_obra.TotalCapitulos = search.Obra.TotalCapitulos;
-				_obra.DataAtualizacao = DateTime.Now;
-				return true;
-			}
-
-			return false;
-		}
-
-		private void FiltrarDescricao(SearchResult search)
-		{
-			if (string.IsNullOrEmpty(_obra.Descricao))
-			{
-				_obra.Descricao = search.Obra.Descricao;
-			}
-
-			//TODO verificar source ou score
-			if (search.Source == EnumSources.MangaUpdate && !string.IsNullOrEmpty(search.Obra.Descricao))
-			{
-				_obra.Descricao = search.Obra.Descricao;
-			}
-		}
-
-		private void FiltrarTitulo(SearchResult search)
-		{
-			if (string.IsNullOrEmpty(_obra.Titulo))
-			{
-				_obra.Titulo = search.Obra.Titulo;
-			}
-		}
-
-		private void FiltrarTituloObraNova(SearchResult search)
-		{
-			if (string.IsNullOrEmpty(_obra.Titulo) || search.Source == EnumSources.MangaUpdate)
-			{
-				_obra.Titulo = search.Obra.Titulo;
-			}
-		}
+			null or "" or "unknown" or "tba" => null,
+			"current" or "publishing" => "ongoing",
+			"finished" or "complete" => "completed",
+			"unreleased" or "upcoming" => "upcoming",
+			_ when texto.Contains("hiatus") => "hiatus",
+			_ when texto.Contains("cancel") => "cancelled",
+			_ when texto.Contains("completed") && !texto.Contains("ongoing") => "completed",
+			_ when texto.Contains("ongoing") => "ongoing",
+			_ => status?.Trim()
+		};
 	}
 }

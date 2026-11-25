@@ -1,53 +1,68 @@
-﻿using Microsoft.Extensions.Logging;
-using ScrollsTracker.Domain.Interfaces.Repository;
-using ScrollsTracker.Domain.Interfaces;
+using System.Diagnostics;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ScrollsTracker.Application.Commands;
-using ScrollsTracker.Domain.Models;
+using ScrollsTracker.Domain.Interfaces;
+using ScrollsTracker.Domain.Interfaces.Repository;
 
-namespace ScrollsTracker.Application.Handlers
+namespace ScrollsTracker.Application.Handlers;
+
+public sealed class AtualizarObrasCommandHandler(
+	IObraRepository repositorio,
+	IServiceScopeFactory scopes,
+	ILogger<AtualizarObrasCommandHandler> logger) : IRequestHandler<AtualizarObrasCommand>
 {
-	public class AtualizarObrasCommandHandler : IRequestHandler<AtualizarObrasCommand>
+	public async Task Handle(AtualizarObrasCommand request, CancellationToken cancellationToken)
 	{
-		private readonly IObraRepository _obraRepository;
-		private readonly IObraAggregatorService _aggregatorService;
-		private readonly ILogger<AtualizarObrasCommandHandler> _logger;
+		var tempo = Stopwatch.StartNew();
+		var ids = await repositorio.ObterIdsParaAtualizarAsync(cancellationToken);
+		var atualizadas = 0;
+		var falhas = 0;
+		using var escrita = new SemaphoreSlim(1);
 
-		public AtualizarObrasCommandHandler(IObraRepository obraRepository, IObraAggregatorService aggregatorService, ILogger<AtualizarObrasCommandHandler> logger)
+		await Parallel.ForEachAsync(ids, new ParallelOptions
 		{
-			_obraRepository = obraRepository;
-			_aggregatorService = aggregatorService;
-			_logger = logger;
-		}
-
-		public async Task Handle(AtualizarObrasCommand request, CancellationToken cancellationToken)
+			MaxDegreeOfParallelism = 3,
+			CancellationToken = cancellationToken
+		}, async (id, token) =>
 		{
-			//TODO: Fazer o select de apenas obras que ainda lançam
-			var obras = await _obraRepository.ObterTodasObrasParaAtualizarAsync();
-
-			if (obras == null || !obras.Any())
+			try
 			{
-				_logger.LogWarning("Nenhuma obra encontrada para atualização.");
-				return;
+				await using var scope = scopes.CreateAsyncScope();
+				var servicos = scope.ServiceProvider;
+				var repo = servicos.GetRequiredService<IObraRepository>();
+				var obra = await repo.GetObraByIdAsync(id, token);
+				if (obra is null)
+					return;
+
+				var resultado = await servicos.GetRequiredService<IObraAggregatorService>()
+					.BuscarEAtualizaObraAsync(obra, token);
+
+				await escrita.WaitAsync(token);
+				try
+				{
+					if (await repo.SalvarAtualizacaoAsync(resultado, token))
+						Interlocked.Increment(ref atualizadas);
+					else
+					{
+						Interlocked.Increment(ref falhas);
+						logger.LogWarning("A obra {ObraId} foi alterada durante a consulta e ficou para a próxima rodada.", id);
+					}
+				}
+				finally
+				{
+					escrita.Release();
+				}
 			}
-
-			_logger.LogInformation("Iniciando atualização de obras...");
-
-			//TODO: Esse método provavelmente vai dar problema no futuro caso tenha muitas obras.
-			foreach (Obra obra in obras) 
+			catch (Exception ex) when (!token.IsCancellationRequested)
 			{
-				var atualizacaoResult = await _aggregatorService.BuscarEAtualizaObraAsync(obra);
-				var result = await _obraRepository.UpdateObraAsync(atualizacaoResult.Obra);
-
-				if(result >= 1) 
-				{
-					_logger.LogInformation($"Obra {atualizacaoResult.Obra.Titulo} atualizada com sucesso. ID: {atualizacaoResult.Obra.Id}");
-				}
-				else
-				{
-					_logger.LogWarning($"Falha ao atualizar a obra {atualizacaoResult.Obra.Titulo}. ID: {atualizacaoResult.Obra.Id}");
-				}
+				Interlocked.Increment(ref falhas);
+				logger.LogError(ex, "Falha ao atualizar a obra {ObraId}.", id);
 			}
-		}
+		});
+
+		logger.LogInformation("Rodada concluída em {DuracaoMs} ms. Obras elegíveis: {Elegiveis}. Atualizadas: {Atualizadas}. Falhas: {Falhas}.",
+			tempo.ElapsedMilliseconds, ids.Count, atualizadas, falhas);
 	}
 }

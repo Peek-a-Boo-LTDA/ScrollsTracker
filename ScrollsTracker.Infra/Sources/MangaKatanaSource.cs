@@ -1,117 +1,47 @@
-﻿using AngleSharp;
-using AngleSharp.Common;
+using AngleSharp;
 using AngleSharp.Dom;
-using FuzzySharp;
 using ScrollsTracker.Domain.Enum;
 using ScrollsTracker.Domain.Interfaces;
 using ScrollsTracker.Domain.Models;
 using ScrollsTracker.Domain.Utils;
-using ScrollsTracker.Infra.Model;
 
-namespace ScrollsTracker.Infra.Sources
+namespace ScrollsTracker.Infra.Sources;
+
+public class MangaKatanaSource(HttpClient httpClient) : IObraSource
 {
-	public class MangaKatanaSource : IObraSource
+	private static readonly Uri Site = new("https://mangakatana.com/");
+	public EnumSources SourceName => EnumSources.MangaKatana;
+
+	public async Task<IReadOnlyList<SearchResult>> BuscarAsync(string titulo, CancellationToken cancellationToken)
 	{
-		public EnumSources SourceName => EnumSources.MangaKatana;
-		private readonly HttpClient _httpClient;
+		using var formulario = new MultipartFormDataContent();
+		formulario.Add(new StringContent(titulo), "s");
+		formulario.Add(new StringContent("book_name"), "search_by");
 
-		public MangaKatanaSource(HttpClient httpClient)
+		using var resposta = await httpClient.PostAsync(Site, formulario, cancellationToken);
+		resposta.EnsureSuccessStatusCode();
+		var html = await resposta.Content.ReadAsStringAsync(cancellationToken);
+		using var contexto = BrowsingContext.New(Configuration.Default);
+		using var documento = await contexto.OpenAsync(req => req.Content(html), cancellationToken);
+
+		return documento.QuerySelectorAll("div.d-cell.text")
+			.Select(Mapear).OfType<SearchResult>().ToList();
+	}
+
+	private SearchResult? Mapear(IElement item)
+	{
+		var titulo = item.QuerySelector(".title")?.TextContent.Trim();
+		if (string.IsNullOrWhiteSpace(titulo))
+			return null;
+
+		var imagem = (item.Closest(".item") ?? item.ParentElement)?.QuerySelector("img");
+		var src = imagem?.GetAttribute("data-src") ?? imagem?.GetAttribute("src");
+		return new SearchResult(new Obra
 		{
-			_httpClient = httpClient;
-			if (!_httpClient.DefaultRequestHeaders.UserAgent.Any())
-			{
-				_httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("ScrollsTracker/1.0 (localhost)");
-			}
-		}
-
-		private async Task<string> ObterPaginaComDadosDasObrasAsync(string titulo)
-		{
-			var url = $"https://mangakatana.com/";
-
-			using var formContent = new MultipartFormDataContent();
-			formContent.Add(new StringContent(titulo), name: "s");
-			formContent.Add(new StringContent("book_name"), name: "search_by");
-
-			var response = await _httpClient.PostAsync(url, formContent);
-
-			response.EnsureSuccessStatusCode();
-
-			return await response.Content.ReadAsStringAsync();
-		}
-
-		public async Task<SearchResult?> ObterObraAsync(string titulo)
-		{
-			var htmlString = await ObterPaginaComDadosDasObrasAsync(titulo);
-			if (string.IsNullOrEmpty(htmlString))
-			{
-				return null;
-			}
-
-			return await ObterInformacoesAPartirDoHtml(htmlString, titulo);
-		}
-
-		private async Task<SearchResult?> ObterInformacoesAPartirDoHtml(string htmlString, string titulo)
-		{
-			var config = Configuration.Default.WithDefaultLoader();
-			var context = BrowsingContext.New(config);
-			var document = await context.OpenAsync(req => req.Content(htmlString));
-
-			var titulosECapitulosHtml = document.QuerySelectorAll("div.d-cell.text");
-			var imagemHtml = document.QuerySelectorAll("img");
-
-			int indice = ProcurarMelhorIndiceDaObraPorTitulo(titulosECapitulosHtml, titulo, out var melhorTitulo, out var score);
-			var capitulos = ObterCapitulos(titulosECapitulosHtml[indice]);
-			var linkImagem = ObterImagem(imagemHtml[indice]);
-
-			var obra = new Obra { Titulo = melhorTitulo, TotalCapitulos = capitulos.ToString(), Imagem = linkImagem };
-
-			return new SearchResult(obra, score, SourceName);
-		}
-
-		private string ObterImagem(IElement imagemHtml)
-		{
-			var src = imagemHtml.Attributes.Where(x => x.Name == "src").FirstOrDefault();
-
-			if (src == null)
-				return "";
-
-			return src.Value;
-		}
-
-		private string ObterCapitulos(IElement document)
-		{
-			var stringCapitulos = document.QuerySelector(".chapter")!
-				.GetElementsByTagName("a")
-				.FirstOrDefault()!
-				.InnerHtml;
-
-			return StringUtils.ManterApenasNumeros(stringCapitulos);
-		}
-
-		private int ProcurarMelhorIndiceDaObraPorTitulo(IHtmlCollection<IElement> obras, string titulo, out string melhorTitulo, out int score)
-		{
-			var indice = 0;
-			var melhorPontuacao = 0;
-			var melhorPesquisa = 0;
-			melhorTitulo = "";
-
-			foreach (var element in obras)
-			{
-				var tituloEncontrado = element.GetElementsByClassName("title").FirstOrDefault()!.InnerHtml;
-				int similaridade = Fuzz.Ratio(tituloEncontrado, titulo);
-
-				if (similaridade >= melhorPontuacao)
-				{
-					melhorPontuacao = similaridade;
-					melhorPesquisa = indice;
-					melhorTitulo = tituloEncontrado;
-				}
-
-				indice++;
-			}
-
-			score = melhorPontuacao;
-			return melhorPesquisa;
-		}
+			Titulo = titulo,
+			TotalCapitulos = StringUtils.ExtrairCapitulo(item.QuerySelector(".chapter a")?.TextContent),
+			Imagem = !string.IsNullOrWhiteSpace(src) && Uri.TryCreate(Site, src, out var capa)
+				&& capa.Scheme is "https" or "http" ? capa.AbsoluteUri : null
+		}, SourceName);
 	}
 }

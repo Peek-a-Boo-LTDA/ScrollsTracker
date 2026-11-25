@@ -3,6 +3,7 @@ import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { XCircleIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { useState } from "react";
 import ObraForm from "../components/ObraForm";
+import HistoricoLancamentos from "../components/HistoricoLancamentos";
 import Modal from "../components/Modal";
 
 import { apiFetch } from "../api";
@@ -178,6 +179,7 @@ function AtualizarObra() {
         onDelete={podeGerenciarObras ? setIsOpenDeletar : undefined}
         isDeleting={isDeleting}
       />
+      <HistoricoLancamentos id={id} />
     </div>
   );
 }

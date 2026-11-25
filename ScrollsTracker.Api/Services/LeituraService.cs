@@ -8,12 +8,13 @@ namespace ScrollsTracker.Api.Services;
 
 public class LeituraService(AppDbContext db, IMapper mapper)
 {
-    public async Task<List<ObraResponse>> ComLeituraAsync(List<Obra> obras, string usuarioId)
+    public async Task<List<ObraResponse>> ComLeituraAsync(List<Obra> obras, string usuarioId,
+        CancellationToken cancellationToken = default)
     {
         var ids = obras.Select(obra => obra.Id).ToList();
         var leituras = await db.UsuarioObras.AsNoTracking()
             .Where(leitura => leitura.UsuarioId == usuarioId && ids.Contains(leitura.ObraId))
-            .ToDictionaryAsync(leitura => leitura.ObraId);
+            .ToDictionaryAsync(leitura => leitura.ObraId, cancellationToken);
 
         return obras.Select(obra =>
         {

@@ -1,4 +1,5 @@
 ﻿using ScrollsTracker.Domain.Models;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate
@@ -15,7 +16,7 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate
 		public string? Description { get; set; }
 
 		[JsonPropertyName("image")]
-		public MangaUpdateSeriesImageResponse Image { get; set; }
+		public MangaUpdateSeriesImageResponse? Image { get; set; }
 
 		[JsonPropertyName("type")]
 		public string? Type { get; set; }
@@ -23,17 +24,31 @@ namespace ScrollsTracker.Infra.ExternalApis.DTO.MangaUpdate
 		[JsonPropertyName("status")]
 		public string? Status { get; set; }
 
+		[JsonPropertyName("associated")]
+		public List<MangaUpdateAssociatedTitle>? Associated { get; set; }
+
+		[JsonPropertyName("year")]
+		public string? Year { get; set; }
+
 		[JsonPropertyName("latest_chapter")]
-		public int LatestChapter { get; set; }
+		public JsonElement LatestChapter { get; set; }
 
 		public Obra ToDomain()
 		{
+			var capitulo = LatestChapter.ValueKind switch
+			{
+				JsonValueKind.Number => LatestChapter.GetRawText(),
+				JsonValueKind.String => LatestChapter.GetString(),
+				_ => null
+			};
+
 			return new Obra
 			{
 				Titulo = Title ?? string.Empty,
 				Descricao = Description is null ? string.Empty : Description.Replace("\n", ""),
-				Imagem = Image.Url.Original ?? string.Empty,
-				TotalCapitulos = LatestChapter.ToString(),
+				Imagem = Image?.Url?.Original,
+				TitulosAlternativos = Associated?.Select(i => i.Title).OfType<string>().ToList() ?? [],
+				TotalCapitulos = Obra.InterpretarCapitulo(capitulo) is > 0 ? capitulo : null,
 				Status = Status ?? string.Empty
 			};
 		}
