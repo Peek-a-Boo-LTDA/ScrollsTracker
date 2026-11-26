@@ -49,7 +49,7 @@ function ImportarObra() {
 
         if (response.ok) {
           setMessage("Dados importados com sucesso!");
-          await Promise.all(["obras", "lancamentos", "obra"].map((chave) =>
+          await Promise.all(["obras", "lancamentos", "obra", "continuar-lendo"].map((chave) =>
             queryClient.invalidateQueries({ queryKey: [chave] })
           ));
         } else {
@@ -110,8 +110,8 @@ function ImportarObra() {
             className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4
                  file:rounded-lg file:border-0
                  file:text-sm file:font-semibold
-                 file:bg-blue-600 file:text-white
-                 hover:file:bg-blue-500 cursor-pointer"
+                 file:bg-neutral-200 file:text-neutral-950
+                 hover:file:bg-neutral-300 cursor-pointer"
           />
         </div>}
 
@@ -119,12 +119,7 @@ function ImportarObra() {
           {podeCadastrarObras && <button
             onClick={handleImport}
             disabled={!selectedFile}
-            className={`button button-primary flex-1
-                  ${
-                    selectedFile
-                      ? "bg-green-600 hover:bg-green-500"
-                      : "bg-gray-700 cursor-not-allowed text-gray-400"
-                  }`}
+            className="button button-primary flex-1"
           >
             Importar
           </button>}

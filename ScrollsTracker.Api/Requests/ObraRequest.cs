@@ -18,6 +18,15 @@ namespace ScrollsTracker.Api.Requests
 		public EnumSources? FonteUltimoCapitulo { get; set; }
 		public string? Imagem { get; set; }
 		public string? Status { get; set; }
+		[JsonConverter(typeof(JsonStringEnumConverter<EnumSources>))]
+		public EnumSources? FonteDescricao { get; set; }
+		[JsonConverter(typeof(JsonStringEnumConverter<EnumSources>))]
+		public EnumSources? FonteImagem { get; set; }
+		[JsonConverter(typeof(JsonStringEnumConverter<EnumSources>))]
+		public EnumSources? FonteStatus { get; set; }
+		public bool? FixarDescricao { get; set; }
+		public bool? FixarImagem { get; set; }
+		public bool? FixarStatus { get; set; }
 		public DateTime DataAtualizacao { get; set; } = DateTime.Now;
 		public DateTime DataVerificacao { get; set; } = DateTime.Now;
 	}

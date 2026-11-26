@@ -17,11 +17,11 @@ function HistoricoLancamentos({ id }) {
       {isPending && <p role="status" className="text-sm text-gray-300">Carregando histórico...</p>}
       {isError && <p role="alert" className="text-sm text-red-300">Não foi possível carregar o histórico.</p>}
       {!isPending && !isError && (lancamentos.length ? (
-        <ul className="divide-y divide-slate-700">
+        <ul className="divide-y divide-neutral-700">
           {lancamentos.map(({ numero, fonte, detectadoEm }) => (
             <li key={numero} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-              <span className="font-medium text-slate-100">Capítulo {numero}</span>
-              <span className="text-slate-300">
+              <span className="font-medium text-neutral-100">Capítulo {numero}</span>
+              <span className="text-neutral-300">
                 {fonte === "MangaUpdate" ? "MangaUpdates" : fonte} · {new Date(detectadoEm).toLocaleString("pt-BR")}
               </span>
             </li>

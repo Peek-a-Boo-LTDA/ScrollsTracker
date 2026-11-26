@@ -12,6 +12,12 @@ namespace ScrollsTracker.Api.AutoMapperProfile
 				.ForMember(destino => destino.TitulosAlternativos, membro => membro.Ignore())
 				.ForMember(destino => destino.VinculosExternos, membro => membro.Ignore())
 				.ForMember(destino => destino.FonteUltimoCapitulo, membro => membro.Ignore())
+				.ForMember(destino => destino.FixarDescricao, membro => membro.Ignore())
+				.ForMember(destino => destino.FixarImagem, membro => membro.Ignore())
+				.ForMember(destino => destino.FixarStatus, membro => membro.Ignore())
+				.ForMember(destino => destino.FonteDescricao, membro => membro.Ignore())
+				.ForMember(destino => destino.FonteImagem, membro => membro.Ignore())
+				.ForMember(destino => destino.FonteStatus, membro => membro.Ignore())
 				.ForMember(destino => destino.UltimoCapituloDetectadoEm, membro => membro.Ignore());
 			CreateMap<Obra, ObraResponse>()
 				.ForMember(destino => destino.StatusLeitura, membro => membro.Ignore())

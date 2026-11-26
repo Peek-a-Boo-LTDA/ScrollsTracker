@@ -6,4 +6,6 @@ public class UsuarioObra
     public int ObraId { get; set; }
     public string? UltimoCapituloLido { get; set; }
     public string? StatusLeitura { get; set; }
+    public bool Seguindo { get; set; }
+    public DateTime? LeituraAtualizadaEm { get; set; }
 }

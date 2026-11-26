@@ -33,6 +33,8 @@ function CadastrarObra() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["obras"] }),
         queryClient.invalidateQueries({ queryKey: ["lancamentos"] }),
+        queryClient.invalidateQueries({ queryKey: ["continuar-lendo"] }),
+        queryClient.invalidateQueries({ queryKey: ["resumo-lancamentos"] }),
       ]);
       setIsOpenCadastrar(true);
       // Poderia adicionar uma notificação de sucesso aqui (ex: react-toastify)
@@ -68,7 +70,7 @@ function CadastrarObra() {
           onClick={() => {
             navigate("/biblioteca");
           }}
-          className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          className="button button-on-paper"
         >
           OK
         </button>
@@ -86,7 +88,7 @@ function CadastrarObra() {
         </p>
         <button
           onClick={() => setIsOpenError(false)}
-          className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          className="button button-on-paper"
         >
           OK
         </button>

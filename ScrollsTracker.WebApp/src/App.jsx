@@ -6,6 +6,7 @@ import CadastrarObra from "./pages/CadastrarObra";
 import AtualizarObra from "./pages/AtualizarObra";
 import Conta from "./pages/Conta";
 import ImportarObra from "./pages/ImportarObras";
+import DiagnosticoFontes from "./pages/DiagnosticoFontes";
 
 const router = createBrowserRouter([
   { path: "/login", element: <Conta key="login" /> },
@@ -33,6 +34,7 @@ const router = createBrowserRouter([
         path: "/importar",
         element: <ImportarObra />,
       },
+      { path: "/diagnostico-fontes", element: <DiagnosticoFontes /> },
     ],
   },
 ]);

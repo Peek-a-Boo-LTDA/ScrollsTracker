@@ -1,4 +1,5 @@
 using FuzzySharp;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using ScrollsTracker.Application.Services.Filter;
 using ScrollsTracker.Domain.Enum;
@@ -21,17 +22,17 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 
 	public async Task<BuscaExternaResult> BuscarCandidatosAsync(
 		string titulo, IReadOnlyList<string> titulosAlternativos, CancellationToken cancellationToken,
-		string? usuarioParaSelecionar = null)
+		string? usuarioParaSelecionar = null, bool mostrarOpcoes = false)
 	{
 		var nomes = StringUtils.LimparTitulosAlternativos(titulo, titulosAlternativos).Prepend(titulo.Trim()).ToArray();
 		var resultados = await BuscarFontesAsync(_fontes, nomes, cancellationToken);
 		var grupos = Agrupar(resultados, nomes);
 		var exatos = grupos.Where(grupo => grupo.Pontuacao == 100).ToList();
 
-		if (exatos.Count == 1)
+		if (exatos.Count == 1 && !mostrarOpcoes)
 			return new BuscaExternaResult((await MontarCandidatoAsync(exatos[0].Resultados, cancellationToken)).Obra, []);
 
-		var opcoes = (exatos.Count > 0 ? exatos : grupos).Take(5);
+		var opcoes = (!mostrarOpcoes && exatos.Count > 0 ? exatos : grupos).Take(5);
 		if (usuarioParaSelecionar != null && cacheCandidatos != null)
 		{
 			var resumos = opcoes.Select(grupo =>
@@ -58,14 +59,15 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 
 	public async Task<AtualizacaoResult> BuscarEAtualizaObraAsync(Obra obra, CancellationToken cancellationToken = default)
 	{
+		var consultas = new ConcurrentDictionary<EnumSources, string>();
 		var nomes = ObraFilter.Nomes(obra).Where(nome => !string.IsNullOrWhiteSpace(nome)).ToArray();
 		var associados = await Task.WhenAll(_fontes
 			.Where(fonte => obra.VinculosExternos.ContainsKey(fonte.SourceName))
-			.Select(fonte => ConsultarVinculoAsync(fonte, obra, cancellationToken)));
+			.Select(fonte => ConsultarVinculoAsync(fonte, obra, cancellationToken, consultas)));
 		var confirmados = associados.OfType<SearchResult>().ToList();
 
 		var disponiveis = _fontes.Where(fonte => !obra.VinculosExternos.ContainsKey(fonte.SourceName));
-		var descobertos = await BuscarFontesAsync(disponiveis, nomes, cancellationToken);
+		var descobertos = await BuscarFontesAsync(disponiveis, nomes, cancellationToken, consultas);
 		var grupos = Agrupar(descobertos, nomes);
 
 		if (confirmados.Count > 0)
@@ -74,13 +76,13 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 				confirmados.Any(confirmado => MesmaObra(confirmado, candidato))
 				&& confirmados.All(confirmado => !IdsConflitam(confirmado, candidato)))).ToList();
 			if (compativeis.Count == 1)
-				confirmados.AddRange(await CompletarGrupoAsync(compativeis[0].Resultados, cancellationToken));
+				confirmados.AddRange(await CompletarGrupoAsync(compativeis[0].Resultados, cancellationToken, consultas));
 		}
 		else if (obra.VinculosExternos.Count == 0)
 		{
 			var exatos = grupos.Where(grupo => grupo.Pontuacao == 100).ToList();
 			if (exatos.Count == 1)
-				confirmados.AddRange(await CompletarGrupoAsync(exatos[0].Resultados, cancellationToken));
+				confirmados.AddRange(await CompletarGrupoAsync(exatos[0].Resultados, cancellationToken, consultas));
 			else if (grupos.Count > 0)
 				logger.LogWarning("A atualização de {TituloBuscado} precisa de uma correspondência confirmada.", obra.Titulo);
 		}
@@ -96,6 +98,13 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 		}
 
 		var novoCapitulo = ObraFilter.Aplicar(obra, confirmados);
+		foreach (var confirmado in confirmados)
+		{
+			if (consultas.TryGetValue(confirmado.Source, out var estado) && estado != "falha")
+				consultas[confirmado.Source] = "confirmada";
+		}
+		obra.UltimaConsultaFontes = consultas.ToDictionary();
+		obra.ConsultaFontesEm = DateTime.UtcNow;
 		obra.DataVerificacao = DateTime.Now;
 		return new AtualizacaoResult(obra, novoCapitulo);
 	}
@@ -120,14 +129,14 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 	}
 
 	private async Task<SearchResult[]> BuscarFontesAsync(IEnumerable<IObraSource> fontes,
-		string[] nomes, CancellationToken cancellationToken)
+		string[] nomes, CancellationToken cancellationToken, ConcurrentDictionary<EnumSources, string>? consultas = null)
 	{
-		var resultados = await Task.WhenAll(fontes.Select(fonte => BuscarFonteAsync(fonte, nomes, cancellationToken)));
+		var resultados = await Task.WhenAll(fontes.Select(fonte => BuscarFonteAsync(fonte, nomes, cancellationToken, consultas)));
 		return resultados.SelectMany(lista => lista).ToArray();
 	}
 
 	private async Task<IReadOnlyList<SearchResult>> BuscarFonteAsync(IObraSource fonte,
-		string[] nomes, CancellationToken cancellationToken)
+		string[] nomes, CancellationToken cancellationToken, ConcurrentDictionary<EnumSources, string>? consultas)
 	{
 		if (nomes.Length == 0)
 			return [];
@@ -153,16 +162,21 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 					fonte.SourceName, candidatos.Count, nomes[0], melhor.Obra.Titulo, Pontuar(melhor, nomes));
 			}
 
+			if (consultas != null)
+				consultas[fonte.SourceName] = candidatos.Count == 0 ? "semDados" : "semCorrespondencia";
 			return candidatos;
 		}
 		catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
 		{
 			logger.LogError(ex, "Falha ao consultar a fonte {Fonte} para {TituloBuscado}.", fonte.SourceName, nomes[0]);
+			if (consultas != null)
+				consultas[fonte.SourceName] = "falha";
 			return candidatos;
 		}
 	}
 
-	private async Task<SearchResult?> ConsultarVinculoAsync(IObraSource fonte, Obra obra, CancellationToken cancellationToken)
+	private async Task<SearchResult?> ConsultarVinculoAsync(IObraSource fonte, Obra obra, CancellationToken cancellationToken,
+		ConcurrentDictionary<EnumSources, string> consultas)
 	{
 		var id = obra.VinculosExternos[fonte.SourceName];
 		try
@@ -172,26 +186,31 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 			{
 				logger.LogInformation("A fonte {Fonte} retornou {TituloEncontrado} pelo vínculo {IdExterno}.",
 					fonte.SourceName, resultado.Obra.Titulo, id);
-				return await CompletarAsync(fonte, resultado, cancellationToken);
+				consultas[fonte.SourceName] = "confirmada";
+				return await CompletarAsync(fonte, resultado, cancellationToken, consultas);
 			}
 
 			logger.LogWarning("A fonte {Fonte} não retornou dados para o vínculo {IdExterno} de {TituloBuscado}.",
 				fonte.SourceName, id, obra.Titulo);
+			consultas[fonte.SourceName] = "semDados";
 		}
 		catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
 		{
 			logger.LogError(ex, "Falha ao consultar o vínculo {IdExterno} da fonte {Fonte} para {TituloBuscado}.",
 				id, fonte.SourceName, obra.Titulo);
+			consultas[fonte.SourceName] = "falha";
 		}
 
 		return null;
 	}
 
-	private Task<SearchResult[]> CompletarGrupoAsync(IEnumerable<SearchResult> grupo, CancellationToken cancellationToken) =>
+	private Task<SearchResult[]> CompletarGrupoAsync(IEnumerable<SearchResult> grupo, CancellationToken cancellationToken,
+		ConcurrentDictionary<EnumSources, string>? consultas = null) =>
 		Task.WhenAll(grupo.Select(resultado => CompletarAsync(
-			_fontes.First(fonte => fonte.SourceName == resultado.Source), resultado, cancellationToken)));
+			_fontes.First(fonte => fonte.SourceName == resultado.Source), resultado, cancellationToken, consultas)));
 
-	private async Task<SearchResult> CompletarAsync(IObraSource fonte, SearchResult resultado, CancellationToken cancellationToken)
+	private async Task<SearchResult> CompletarAsync(IObraSource fonte, SearchResult resultado, CancellationToken cancellationToken,
+		ConcurrentDictionary<EnumSources, string>? consultas = null)
 	{
 		if (!resultado.RequerDetalhes)
 			return resultado;
@@ -204,6 +223,8 @@ public class ObraAggregatorService(IEnumerable<IObraSource> fontes, ILogger<Obra
 		{
 			logger.LogError(ex, "Falha ao completar dados da fonte {Fonte} para {TituloEncontrado}.",
 				fonte.SourceName, resultado.Obra.Titulo);
+			if (consultas != null)
+				consultas[fonte.SourceName] = "falha";
 			return resultado;
 		}
 	}

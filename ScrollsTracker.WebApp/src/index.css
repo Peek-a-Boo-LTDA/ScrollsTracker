@@ -2,21 +2,21 @@
 
 @layer base {
   body {
-    background: #101117;
-    color: #e5e7ef;
+    background: #000;
+    color: #e7e7e7;
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   }
 
   :where(a, button, input, select, textarea):focus-visible {
-    outline: 2px solid #a5a8ff;
+    outline: 2px solid #fafafa;
     outline-offset: 3px;
   }
 }
 
 @layer components {
   .app-header {
-    background: #151721;
-    border-bottom: 1px solid #292c3c;
+    background: #101010;
+    border-bottom: 1px solid #333;
   }
 
   .app-main {
@@ -37,7 +37,7 @@
   }
 
   .page-title {
-    color: #f1f2fa;
+    color: #f5f5f5;
     font-size: clamp(1.5rem, 3vw, 2rem);
     line-height: 1.2;
     font-weight: 700;
@@ -45,8 +45,8 @@
   }
 
   .surface {
-    background: #191c27;
-    border: 1px solid #303449;
+    background: #151515;
+    border: 1px solid #383838;
     border-radius: 0.875rem;
     box-shadow: 0 10px 25px rgb(0 0 0 / 12%);
   }
@@ -57,18 +57,14 @@
     min-height: 2.25rem;
     padding-inline: 0.625rem;
     border-radius: 0.5rem;
-    color: #c5c9da;
+    color: #ccc;
     font-size: 0.875rem;
     font-weight: 550;
   }
 
   .nav-item:hover, .nav-item[aria-current="page"] {
-    color: #eef0ff;
-    background: #292c44;
-  }
-
-  .nav-exit {
-    color: #aeb4cb;
+    color: #fff;
+    background: #292929;
   }
 
   .button {
@@ -90,41 +86,50 @@
   }
 
   .button-primary {
-    color: white;
-    background: #504bd1;
+    color: #111;
+    background: #f2f2ee;
   }
 
   .button-primary:hover:not(:disabled) {
-    background: #625ce5;
+    background: #dcdcd6;
+  }
+
+  .button-on-paper {
+    color: #fafafa;
+    background: #171717;
+  }
+
+  .button-on-paper:hover:not(:disabled) {
+    background: #303030;
   }
 
   .button-secondary {
-    color: #e0e4f8;
-    background: #24283a;
-    border-color: #3b405a;
+    color: #eee;
+    background: #202020;
+    border-color: #515151;
   }
 
   .button-secondary:hover:not(:disabled) {
-    background: #30354d;
+    background: #303030;
   }
 
   .field {
     min-height: 2.65rem;
-    border: 1px solid #3a4056;
+    border: 1px solid #525252;
     border-radius: 0.55rem;
     padding: 0.55rem 0.75rem;
-    background-color: #202432;
-    color: #edf0fc;
+    background-color: #1b1b1b;
+    color: #f5f5f5;
   }
 
   .field::placeholder {
-    color: #a8aec1;
+    color: #aaa;
   }
 
   select.field {
     appearance: none;
     padding-right: 2.3rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 16 16'%3E%3Cpath stroke='%23c5c9da' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' viewBox='0 0 16 16'%3E%3Cpath stroke='%23ccc' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
   }
@@ -140,14 +145,14 @@
     transition: background-color 150ms, border-color 150ms;
   }
 
-  .manga-link:hover .manga-card, .manga-link:focus-visible .manga-card {
-    background: #202435;
-    border-color: #6565ab;
+  .manga-card:has(.manga-link:hover), .manga-card:has(.manga-link:focus-visible) {
+    background: #202020;
+    border-color: #969696;
   }
 
   .empty-state {
     padding: 1.5rem;
-    color: #c5c9da;
+    color: #ccc;
   }
 
   .account-page {
@@ -155,6 +160,6 @@
     min-height: 100vh;
     align-items: center;
     padding: 2rem 1rem;
-    background: radial-gradient(ellipse at top, #232542, #101117 62%);
+    background: radial-gradient(ellipse at top, #171717, #000 60%);
   }
 }

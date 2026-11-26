@@ -15,7 +15,7 @@ namespace ScrollsTracker.Domain.Interfaces.Facade
 		Task<int> DeleteObraById(int id);
 		Task<Obra> BuscarObraAgregadaAsync(string titulo);
 		Task<BuscaExternaResult> BuscarCandidatosAsync(string titulo, IReadOnlyList<string> titulosAlternativos,
-			CancellationToken cancellationToken, string? usuarioParaSelecionar = null);
+			CancellationToken cancellationToken, string? usuarioParaSelecionar = null, bool mostrarOpcoes = false);
 		Task<Obra?> SelecionarCandidatoAsync(Guid chave, string usuarioId, CancellationToken cancellationToken);
 	}
 }

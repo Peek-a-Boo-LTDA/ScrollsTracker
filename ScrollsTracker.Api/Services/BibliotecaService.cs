@@ -35,7 +35,7 @@ public sealed class BibliotecaService(AppDbContext db)
 				item.obra.Imagem, item.obra.Status, item.obra.TotalCapitulos,
 				item.leitura == null ? null : item.leitura.UltimoCapituloLido,
 				item.leitura == null ? null : item.leitura.StatusLeitura,
-				item.obra.DataAtualizacao, item.obra.FonteUltimoCapitulo))
+				item.obra.DataAtualizacao, item.obra.FonteUltimoCapitulo, item.leitura != null && item.leitura.Seguindo))
 			.ToListAsync(cancellationToken);
 
 		return new PaginaBiblioteca(itens, pagina, totalPaginas, total);

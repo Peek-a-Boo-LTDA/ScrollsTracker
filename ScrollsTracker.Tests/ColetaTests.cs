@@ -58,6 +58,45 @@ public class ColetaTests
 		Assert.Null(resultado.Lancamento);
 	}
 
+	[Fact]
+	public async Task AtualizacaoProtegeMetadadosFixadosERegistraResultadosDasFontes()
+	{
+		var externo = new Obra { Titulo = "Amanhecer", Descricao = "Descrição externa",
+			Imagem = "https://example.test/capa", Status = "current", TotalCapitulos = "12" };
+		var coletor = Criar(
+			new Fonte(EnumSources.MangaDex, [new SearchResult(externo, EnumSources.MangaDex)]),
+			new Fonte(EnumSources.MangaHere, [], Falhar: true),
+			new Fonte(EnumSources.Kitsu, []));
+		var obra = new Obra { Titulo = "Amanhecer", Descricao = "Descrição manual",
+			Status = "completed", FixarDescricao = true, FixarStatus = true, TotalCapitulos = "10" };
+
+		var resultado = await coletor.BuscarEAtualizaObraAsync(obra);
+		Assert.Equal("Descrição manual", obra.Descricao);
+		Assert.Equal("completed", obra.Status);
+		Assert.Equal(externo.Imagem, obra.Imagem);
+		Assert.Equal(EnumSources.MangaDex, obra.FonteImagem);
+		Assert.Equal("12", resultado.Lancamento?.Numero);
+		Assert.Equal("confirmada", obra.UltimaConsultaFontes[EnumSources.MangaDex]);
+		Assert.Equal("falha", obra.UltimaConsultaFontes[EnumSources.MangaHere]);
+		Assert.Equal("semDados", obra.UltimaConsultaFontes[EnumSources.Kitsu]);
+	}
+
+	[Fact]
+	public async Task BuscaExplicitaMostraOpcoesMesmoComCorrespondenciaExata()
+	{
+		var externo = new Obra { Titulo = "Amanhecer", Descricao = "Descrição externa", Status = "current" };
+		var coletor = Criar(new Fonte(EnumSources.Kitsu,
+			[new SearchResult(externo, EnumSources.Kitsu), Resultado(EnumSources.Kitsu, "Amanhecer de novo", null)]));
+
+		var direta = await coletor.BuscarCandidatosAsync("Amanhecer", [], CancellationToken.None);
+		Assert.Equal(EnumSources.Kitsu, direta.Obra?.FonteDescricao);
+		Assert.Equal(EnumSources.Kitsu, direta.Obra?.FonteStatus);
+		Assert.Equal("ongoing", direta.Obra?.Status);
+		var opcoes = await coletor.BuscarCandidatosAsync("Amanhecer", [], CancellationToken.None, mostrarOpcoes: true);
+		Assert.Null(opcoes.Obra);
+		Assert.Equal(2, opcoes.Candidatos.Count);
+	}
+
 	private static ObraAggregatorService Criar(params IObraSource[] fontes) =>
 		new(fontes, NullLogger<ObraAggregatorService>.Instance);
 

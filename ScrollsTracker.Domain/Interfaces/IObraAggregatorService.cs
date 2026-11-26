@@ -6,7 +6,7 @@ namespace ScrollsTracker.Domain.Interfaces
     {
 		Task<Obra> BuscarObraAgregadaAsync(string titulo);
 		Task<BuscaExternaResult> BuscarCandidatosAsync(string titulo, IReadOnlyList<string> titulosAlternativos,
-			CancellationToken cancellationToken, string? usuarioParaSelecionar = null);
+			CancellationToken cancellationToken, string? usuarioParaSelecionar = null, bool mostrarOpcoes = false);
 		Task<Obra?> SelecionarCandidatoAsync(Guid chave, string usuarioId, CancellationToken cancellationToken);
 
 		Task<AtualizacaoResult> BuscarEAtualizaObraAsync(Obra obra, CancellationToken cancellationToken = default);

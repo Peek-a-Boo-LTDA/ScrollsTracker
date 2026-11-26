@@ -9,10 +9,21 @@ function lerTitulosAlternativos(texto = "") {
   return texto.split(/\r?\n/).map((titulo) => titulo.trim()).filter(Boolean);
 }
 
+const metadados = {
+  descricao: { titulo: "descrição", fonte: "fonteDescricao", fixar: "fixarDescricao" },
+  imagem: { titulo: "capa", fonte: "fonteImagem", fixar: "fixarImagem" },
+  status: { titulo: "status da obra", fonte: "fonteStatus", fixar: "fixarStatus" },
+};
+
+function mostrarNomeFonte(fonte) {
+  return fonte === "MangaUpdate" ? "MangaUpdates" : fonte;
+}
+
 function dadosDoFormulario(obra) {
   return {
     ...obra,
     numeroComFonte: obra.totalCapitulos,
+    valoresComFonte: Object.fromEntries(Object.keys(metadados).map((campo) => [campo, obra[campo]])),
     titulosAlternativosTexto: (obra.titulosAlternativos ?? []).join("\n"),
   };
 }
@@ -31,6 +42,7 @@ function ObraForm({
 }) {
   const [busca, setBusca] = useState(null);
   const [mensagemBusca, setMensagemBusca] = useState("");
+  const [permiteOutrasOpcoes, setPermiteOutrasOpcoes] = useState(false);
   const {
     register,
     handleSubmit,
@@ -54,8 +66,8 @@ function ObraForm({
 
   const navigate = useNavigate();
 
-  const procurarObraApi = async ({ titulo, aliases }) => {
-    const parametros = new URLSearchParams({ titulo, resumir: "true" });
+  const procurarObraApi = async ({ titulo, aliases, mostrarOpcoes }) => {
+    const parametros = new URLSearchParams({ titulo, resumir: "true", mostrarOpcoes: String(mostrarOpcoes) });
     aliases.forEach((alias) => parametros.append("titulosAlternativos", alias));
     const response = await apiFetch(`/api/ScrollsTracker/CandidatosExternos?${parametros}`);
     if (!response.ok) {
@@ -72,6 +84,22 @@ function ObraForm({
   const capituloComFonte = watch("numeroComFonte");
   const mostrarFonte = fonteCapitulo && padronizarCapitulo(totalCapitulosValue) === padronizarCapitulo(capituloComFonte);
 
+  function origemDoCampo(campo) {
+    const { titulo, fonte, fixar } = metadados[campo];
+    const fonteAtual = watch(campo) === watch("valoresComFonte")?.[campo] ? watch(fonte) : null;
+    return (
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-300">
+        {fonteAtual && <span>Fonte: {mostrarNomeFonte(fonteAtual)}</span>}
+        {Type === "Atualizar" && !somenteLeitura && (
+          <label className="ml-auto inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" {...register(fixar)} />
+            Fixar {titulo}
+          </label>
+        )}
+      </div>
+    );
+  }
+
   function aplicarObra(obra, manterTitulo = false) {
     const atuais = getValues();
     const titulos = [
@@ -79,14 +107,26 @@ function ObraForm({
       ...(obra.titulosAlternativos ?? []),
       ...(manterTitulo ? [obra.titulo] : []),
     ].filter(Boolean);
+    const campos = {};
+    const valoresComFonte = { ...atuais.valoresComFonte };
+    const faltando = [];
+    for (const [campo, { titulo, fonte, fixar }] of Object.entries(metadados)) {
+      if (!obra[campo]?.trim()) {
+        faltando.push(titulo);
+      } else if (!atuais[fixar]) {
+        campos[campo] = obra[campo];
+        campos[fonte] = obra[fonte];
+        valoresComFonte[campo] = obra[campo];
+      }
+    }
+
     reset({
       ...atuais,
+      ...campos,
+      valoresComFonte,
       titulo: manterTitulo ? atuais.titulo : obra.titulo,
       titulosAlternativosTexto: [...new Set(titulos)].slice(0, 50).join("\n"),
       vinculosExternos: obra.vinculosExternos,
-      descricao: obra.descricao ?? atuais.descricao,
-      imagem: obra.imagem ?? atuais.imagem,
-      status: obra.status ?? atuais.status,
       totalCapitulos: obra.totalCapitulos ?? atuais.totalCapitulos,
       ...(obra.totalCapitulos != null && {
         numeroComFonte: obra.totalCapitulos,
@@ -95,7 +135,10 @@ function ObraForm({
       }),
     });
     setBusca(null);
-    setMensagemBusca("Dados preenchidos. Revise antes de salvar.");
+    setPermiteOutrasOpcoes(true);
+    setMensagemBusca(faltando.length
+      ? `Dados parciais. As fontes não retornaram: ${faltando.join(", ")}.`
+      : "Dados preenchidos. Revise antes de salvar.");
   }
 
   useEffect(() => {
@@ -128,7 +171,7 @@ function ObraForm({
       return resposta.json();
     },
     onSuccess: (obra, { titulo }) => {
-      if (titulo === getValues("titulo").trim()) aplicarObra(obra);
+      if (titulo === getValues("titulo").trim()) aplicarObra(obra, Type === "Atualizar");
     },
     onError: (erro) => setMensagemBusca(erro.message),
   });
@@ -136,7 +179,7 @@ function ObraForm({
   function escolherCandidato({ chave, obra }) {
     setMensagemBusca("");
     if (chave) selecao.mutate({ chave, titulo: getValues("titulo").trim() });
-    else aplicarObra(obra);
+    else aplicarObra(obra, Type === "Atualizar");
   }
 
   useEffect(() => {
@@ -145,10 +188,12 @@ function ObraForm({
     }
   }, [initialData, reset]);
 
-  const handleProcurarClick = () => {
+  const buscarNasFontes = (mostrarOpcoes = false) => {
     setBusca(null);
     setMensagemBusca("");
+    setPermiteOutrasOpcoes(false);
     procurarObra({
+      mostrarOpcoes,
       titulo: getValues("titulo").trim(),
       aliases: lerTitulosAlternativos(getValues("titulosAlternativosTexto")).slice(0, 10),
     });
@@ -157,8 +202,11 @@ function ObraForm({
   return (
     <div className="w-full max-w-4xl p-4">
       <form
-        onSubmit={handleSubmit(({ titulosAlternativosTexto, numeroComFonte, ...dados }) => onSubmit({
+        onSubmit={handleSubmit(({ titulosAlternativosTexto, numeroComFonte, valoresComFonte, ...dados }) => onSubmit({
           ...dados,
+          ...Object.fromEntries(Object.entries(metadados).map(([campo, { fonte }]) => [
+            fonte, dados[campo] === valoresComFonte?.[campo] ? dados[fonte] : null,
+          ])),
           titulosAlternativos: lerTitulosAlternativos(titulosAlternativosTexto),
           totalCapitulos: padronizarCapitulo(dados.totalCapitulos) || null,
           fonteUltimoCapitulo: padronizarCapitulo(dados.totalCapitulos) === padronizarCapitulo(numeroComFonte)
@@ -196,7 +244,7 @@ function ObraForm({
                 id="titulo"
                 maxLength={300}
                 readOnly={somenteLeitura}
-                className={`field block w-full read-only:bg-slate-900/70 ${
+                className={`field block w-full read-only:bg-neutral-900/70 ${
                   errors.titulo ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="Ex: One Piece"
@@ -217,7 +265,7 @@ function ObraForm({
                 rows={2}
                 readOnly={somenteLeitura}
                 placeholder="Um título por linha"
-                className="field block w-full read-only:bg-slate-900/70"
+                className="field block w-full read-only:bg-neutral-900/70"
                 {...register("titulosAlternativosTexto", {
                   validate: (texto) => {
                     const aliases = lerTitulosAlternativos(texto);
@@ -234,13 +282,19 @@ function ObraForm({
               <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={handleProcurarClick}
+                  onClick={() => buscarNasFontes()}
                   disabled={isProcurando || selecao.isPending || !tituloValue?.trim()}
                   className="button button-secondary w-full disabled:opacity-50"
                 >
                   {isProcurando ? "Buscando nas fontes..." : "Carregar dados"}
                 </button>
                 <p role="status" className={mensagemBusca ? "text-sm text-gray-300" : "sr-only"}>{mensagemBusca}</p>
+                {permiteOutrasOpcoes && (
+                  <button type="button" className="button button-secondary" disabled={!tituloValue?.trim() || isProcurando}
+                    onClick={() => buscarNasFontes(true)}>
+                    Ver outras correspondências
+                  </button>
+                )}
                 {busca && busca.titulo === tituloValue?.trim() && (
                   <section aria-label="Resultados da busca externa" className="space-y-2">
                     <h3 className="text-sm font-semibold text-gray-200">Selecione a obra</h3>
@@ -254,18 +308,18 @@ function ObraForm({
                         disabled={selecao.isPending}
                         aria-busy={carregando}
                         onClick={() => escolherCandidato(candidato)}
-                        className="flex min-h-16 w-full items-center gap-3 rounded-lg border border-slate-700 p-2 text-left hover:border-indigo-400 disabled:opacity-65"
+                        className="flex min-h-16 w-full items-center gap-3 rounded-lg border border-neutral-700 p-2 text-left hover:border-neutral-300 disabled:opacity-65"
                       >
                         {obra.imagem && <img src={obra.imagem} alt="" className="h-14 w-10 rounded object-cover" />}
                         <span className="min-w-0">
                           <span className="block break-words font-medium text-gray-100">{obra.titulo}</span>
                           <span className="block text-xs text-gray-400">{[ano, formato, ...fontes].filter(Boolean).join(" · ")}</span>
-                          {carregando && <span role="status" className="block text-xs text-indigo-300">Carregando dados...</span>}
+                          {carregando && <span role="status" className="block text-xs text-neutral-200">Carregando dados...</span>}
                         </span>
                       </button>
                       );
                     })}
-                    <button type="button" className="text-sm text-indigo-300 hover:underline" disabled={selecao.isPending}
+                    <button type="button" className="text-sm text-neutral-200 hover:underline" disabled={selecao.isPending}
                       onClick={() => setBusca(null)}>
                       Preencher manualmente
                     </button>
@@ -285,12 +339,13 @@ function ObraForm({
                 id="descricao"
                 readOnly={somenteLeitura}
                 rows="3"
-                className={`field block w-full read-only:bg-slate-900/70 ${
+                className={`field block w-full read-only:bg-neutral-900/70 ${
                   errors.descricao ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="Uma breve descrição da obra..."
                 {...register("descricao")}
               ></textarea>
+              {origemDoCampo("descricao")}
               {errors.descricao && (
                 <p className="mt-1 text-xs text-red-400">
                   {errors.descricao.message}
@@ -310,12 +365,13 @@ function ObraForm({
                 type="text"
                 id="imagem"
                 readOnly={somenteLeitura}
-                className={`field block w-full read-only:bg-slate-900/70 ${
+                className={`field block w-full read-only:bg-neutral-900/70 ${
                   errors.imagem ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="https://exemplo.com/capa.jpg"
                 {...register("imagem")}
               />
+              {origemDoCampo("imagem")}
               {errors.imagem && (
                 <p className="mt-1 text-xs text-red-400">
                   {errors.imagem.message}
@@ -339,7 +395,7 @@ function ObraForm({
                   readOnly={somenteLeitura}
                   step="any"
                   pattern="[0-9]*[.]?[0-9]*"
-                  className={`field block w-full read-only:bg-slate-900/70 ${
+                  className={`field block w-full read-only:bg-neutral-900/70 ${
                     errors.totalCapitulos ? "border-red-500" : "border-gray-600"
                   }`}
                   placeholder="1100"
@@ -377,7 +433,7 @@ function ObraForm({
                   inputMode="decimal"
                   pattern="[0-9]+([.,][0-9]+)?"
                   maxLength={24}
-                  className={`field block w-full read-only:bg-slate-900/70 ${
+                  className={`field block w-full read-only:bg-neutral-900/70 ${
                     errors.ultimoCapituloLido
                       ? "border-red-500"
                       : "border-gray-600"
@@ -446,12 +502,13 @@ function ObraForm({
                 type="text"
                 id="status"
                 readOnly={somenteLeitura}
-                className={`field block w-full read-only:bg-slate-900/70 ${
+                className={`field block w-full read-only:bg-neutral-900/70 ${
                   errors.status ? "border-red-500" : "border-gray-600"
                 }`}
                 placeholder="Em Andamento"
                 {...register("status")}
               />
+              {origemDoCampo("status")}
               {errors.status && (
                 <p className="mt-1 text-xs text-red-400">
                   {errors.status.message}
@@ -476,7 +533,7 @@ function ObraForm({
                   type="button"
                   onClick={() => onDelete(true)}
                   disabled={isDeleting}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isDeleting ? "Deletando..." : "Deletar Obra"}
                 </button>

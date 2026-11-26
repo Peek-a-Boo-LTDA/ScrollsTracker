@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using ScrollsTracker.Api.AutoMapperProfile;
 using ScrollsTracker.Api.Repository;
 using ScrollsTracker.Api.Services;
 using ScrollsTracker.Domain.Enum;
@@ -37,6 +39,34 @@ public class BibliotecaTests
 		var pagina = await biblioteca.BuscarAsync("leitor-a", null, null, null, 2, 1, CancellationToken.None);
 		Assert.Equal(2, pagina.TotalPaginas);
 		Assert.Equal(b.Id, Assert.Single(pagina.Obras).Id);
+	}
+
+	[Fact]
+	public async Task SeguirNaoCompartilhaOuApagaProgressoEContinuarMostraApenasLeituraPendente()
+	{
+		await using var conexao = new SqliteConnection("Data Source=:memory:");
+		await conexao.OpenAsync();
+		await using var db = CriarContexto(conexao);
+		await db.Database.MigrateAsync();
+		var obra = new Obra { Titulo = "Amanhecer", TotalCapitulos = "10" };
+		db.AddRange(obra, new IdentityUser { Id = "leitor-a" }, new IdentityUser { Id = "leitor-b" });
+		await db.SaveChangesAsync();
+		var mapper = new MapperConfiguration(cfg => cfg.AddProfile<AutoMapperProfile>()).CreateMapper();
+		var leituras = new LeituraService(db, mapper);
+		await leituras.AtualizarAsync(obra.Id, "leitor-a", new() { StatusLeitura = "Lendo", UltimoCapituloLido = "4" });
+		await leituras.AtualizarAsync(obra.Id, "leitor-b", new() { StatusLeitura = "Lendo", UltimoCapituloLido = "10" });
+		await db.SaveChangesAsync();
+		await leituras.SeguirAsync(obra.Id, "leitor-a", true);
+		await db.SaveChangesAsync();
+
+		Assert.Equal("4", Assert.Single(await leituras.ContinuarAsync("leitor-a", CancellationToken.None)).UltimoCapituloLido);
+		Assert.Empty(await leituras.ContinuarAsync("leitor-b", CancellationToken.None));
+		Assert.False(Assert.Single(await leituras.ComLeituraAsync([obra], "leitor-b")).Seguindo);
+		await leituras.SeguirAsync(obra.Id, "leitor-a", false);
+		await db.SaveChangesAsync();
+		var leitura = Assert.Single(await leituras.ComLeituraAsync([obra], "leitor-a"));
+		Assert.False(leitura.Seguindo);
+		Assert.Equal("4", leitura.UltimoCapituloLido);
 	}
 
 	[Fact]

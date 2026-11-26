@@ -13,9 +13,12 @@ internal static class ObraFilter
 
 	public static LancamentoCapitulo? Aplicar(Obra obra, IReadOnlyList<SearchResult> resultados)
 	{
-		obra.Descricao = EscolherCampo(resultados, Catalogo, item => item.Descricao) ?? obra.Descricao;
-		obra.Status = EscolherCampo(resultados, Catalogo, item => NormalizarStatus(item.Status)) ?? obra.Status;
-		obra.Imagem = EscolherCampo(resultados, Capas, item => item.Imagem) ?? obra.Imagem;
+		if (!obra.FixarDescricao && EscolherCampo(resultados, Catalogo, item => item.Descricao) is { } descricao)
+			(obra.Descricao, obra.FonteDescricao) = (descricao.Valor, descricao.Fonte);
+		if (!obra.FixarStatus && EscolherCampo(resultados, Catalogo, item => NormalizarStatus(item.Status)) is { } status)
+			(obra.Status, obra.FonteStatus) = (status.Valor, status.Fonte);
+		if (!obra.FixarImagem && EscolherCampo(resultados, Capas, item => item.Imagem) is { } imagem)
+			(obra.Imagem, obra.FonteImagem) = (imagem.Valor, imagem.Fonte);
 
 		foreach (var resultado in resultados)
 		{
@@ -57,11 +60,18 @@ internal static class ObraFilter
 	public static IEnumerable<string> NomesNormalizados(Obra obra) =>
 		Nomes(obra).Select(StringUtils.NormalizarTitulo).Where(nome => nome.Length > 0);
 
-	private static string? EscolherCampo(IReadOnlyList<SearchResult> resultados, IEnumerable<EnumSources> prioridade,
-		Func<Obra, string?> campo) =>
-		prioridade.Select(fonte => resultados.FirstOrDefault(item => item.Source == fonte))
-			.OfType<SearchResult>().Select(item => campo(item.Obra))
-			.FirstOrDefault(valor => !string.IsNullOrWhiteSpace(valor));
+	private static (string Valor, EnumSources Fonte)? EscolherCampo(IReadOnlyList<SearchResult> resultados,
+		IEnumerable<EnumSources> prioridade, Func<Obra, string?> campo)
+	{
+		foreach (var fonte in prioridade)
+		{
+			var resultado = resultados.FirstOrDefault(item => item.Source == fonte);
+			if (resultado is not null && campo(resultado.Obra) is { } valor && !string.IsNullOrWhiteSpace(valor))
+				return (valor, fonte);
+		}
+
+		return null;
+	}
 
 	private static string? NormalizarStatus(string? status)
 	{

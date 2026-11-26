@@ -2,13 +2,13 @@
 //TODO SERVICO DE ATUALIZACAO
 //namespace ScrollsTracker.Api.Services
 //{
-//    public class ScrollTrackerJobService : IHostedService, IDisposable
+//    public class ScrollsTrackerJobService : IHostedService, IDisposable
 //    {
 //        private int executionCount = 0;
-//        private readonly ILogger<ScrollTrackerJobService> _logger;
+//        private readonly ILogger<ScrollsTrackerJobService> _logger;
 //        private Timer? _timer = null;
 
-//        public ScrollTrackerJobService(ILogger<ScrollTrackerJobService> logger)
+//        public ScrollsTrackerJobService(ILogger<ScrollsTrackerJobService> logger)
 //        {
 //            _logger = logger;
 //        }

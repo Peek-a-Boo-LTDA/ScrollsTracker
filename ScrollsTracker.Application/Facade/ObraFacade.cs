@@ -19,8 +19,8 @@ namespace ScrollsTracker.Application.Facade
 		public Task<Obra> BuscarObraAgregadaAsync(string titulo) => _obraAggregator.BuscarObraAgregadaAsync(titulo);
 
 		public Task<BuscaExternaResult> BuscarCandidatosAsync(string titulo, IReadOnlyList<string> titulosAlternativos,
-			CancellationToken cancellationToken, string? usuarioParaSelecionar = null) =>
-			_obraAggregator.BuscarCandidatosAsync(titulo, titulosAlternativos, cancellationToken, usuarioParaSelecionar);
+			CancellationToken cancellationToken, string? usuarioParaSelecionar = null, bool mostrarOpcoes = false) =>
+			_obraAggregator.BuscarCandidatosAsync(titulo, titulosAlternativos, cancellationToken, usuarioParaSelecionar, mostrarOpcoes);
 
 		public Task<Obra?> SelecionarCandidatoAsync(Guid chave, string usuarioId, CancellationToken cancellationToken) =>
 			_obraAggregator.SelecionarCandidatoAsync(chave, usuarioId, cancellationToken);

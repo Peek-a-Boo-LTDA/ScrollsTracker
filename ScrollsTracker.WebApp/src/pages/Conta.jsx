@@ -54,7 +54,7 @@ function Conta({ cadastro = false }) {
         <button type="submit" disabled={acesso.isPending} className="button button-primary">
           {cadastro ? "Cadastrar" : "Entrar"}
         </button>
-        <Link to={cadastro ? "/login" : "/cadastro"} className="text-indigo-300 underline">
+        <Link to={cadastro ? "/login" : "/cadastro"} className="text-neutral-200 underline">
           {cadastro ? "Já tenho conta" : "Criar conta"}
         </Link>
       </form>

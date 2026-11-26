@@ -17,7 +17,7 @@ function Layout() {
 
   return (
     <div>
-      <Navbar />
+      <Navbar sessao={sessao.data} />
       <main className="app-main">
         <Outlet context={sessao.data} />
       </main>

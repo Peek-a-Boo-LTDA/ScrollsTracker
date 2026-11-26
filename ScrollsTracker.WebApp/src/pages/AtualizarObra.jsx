@@ -61,6 +61,8 @@ function AtualizarObra() {
         queryClient.invalidateQueries({ queryKey: ["obra", id] }),
         queryClient.invalidateQueries({ queryKey: ["obras"] }),
         queryClient.invalidateQueries({ queryKey: ["lancamentos"] }),
+        queryClient.invalidateQueries({ queryKey: ["continuar-lendo"] }),
+        queryClient.invalidateQueries({ queryKey: ["resumo-lancamentos"] }),
       ]);
       setIsOpenAtualizar(true);
     },
@@ -76,6 +78,8 @@ function AtualizarObra() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["obras"] }),
         queryClient.invalidateQueries({ queryKey: ["lancamentos"] }),
+        queryClient.invalidateQueries({ queryKey: ["continuar-lendo"] }),
+        queryClient.invalidateQueries({ queryKey: ["resumo-lancamentos"] }),
       ]);
       queryClient.removeQueries({ queryKey: ["obra", id] });
       navigate("/");
@@ -118,7 +122,7 @@ function AtualizarObra() {
             setIsOpenAtualizar(false);
             navigate("/biblioteca");
           }}
-          className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          className="button button-on-paper"
         >
           OK
         </button>
@@ -137,7 +141,7 @@ function AtualizarObra() {
 
         <button
           onClick={() => setIsOpenError(false)}
-          className="bg-blue-500 text-white font-bold py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          className="button button-on-paper"
         >
           OK
         </button>

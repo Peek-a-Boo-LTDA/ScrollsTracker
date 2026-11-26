@@ -74,13 +74,13 @@ namespace ScrollsTracker.Api.Controllers
 		public async Task<ActionResult<BuscaExternaResult>> BuscarCandidatosAsync(
 			[FromQuery, StringLength(300, MinimumLength = 1)] string titulo,
 			[FromQuery] string[]? titulosAlternativos,
-			CancellationToken cancellationToken, [FromQuery] bool resumir = false)
+			CancellationToken cancellationToken, [FromQuery] bool resumir = false, [FromQuery] bool mostrarOpcoes = false)
 		{
 			if (string.IsNullOrWhiteSpace(titulo))
 				return BadRequest("Informe um título.");
 
 			return Ok(await _obraFacade.BuscarCandidatosAsync(titulo, titulosAlternativos ?? [], cancellationToken,
-				resumir ? UsuarioId : null));
+				resumir ? UsuarioId : null, mostrarOpcoes));
 		}
 
 		[HttpGet("CandidatosExternos/{chave:guid}")]
@@ -102,7 +102,7 @@ namespace ScrollsTracker.Api.Controllers
 		}
 
 		[HttpGet("ObterLancamentos")]
-		public async Task<IActionResult> GetLancamentosAsync(CancellationToken cancellationToken)
+		public async Task<IActionResult> GetLancamentosAsync(CancellationToken cancellationToken, [FromQuery] bool soSeguidas = false)
 		{
 			var lancamentos = (await _obraFacade.ObterLancamentosRecentesAsync(cancellationToken)).DistinctBy(item => item.ObraId).ToList();
 			var porObra = lancamentos.ToDictionary(item => item.ObraId);
@@ -111,6 +111,9 @@ namespace ScrollsTracker.Api.Controllers
 			var novidades = new List<ObraResponse>();
 			foreach (var obra in obras)
 			{
+				if (soSeguidas && !obra.Seguindo)
+					continue;
+
 				var lancamento = porObra[obra.Id];
 				if (Obra.InterpretarCapitulo(lancamento.Numero) is not decimal numero
 					|| numero <= (Obra.InterpretarCapitulo(obra.UltimoCapituloLido) ?? 0))
@@ -161,6 +164,7 @@ namespace ScrollsTracker.Api.Controllers
 				var obra = _mapper.Map<Obra>(obraRequest);
 				AplicarIdentidade(obra, obraRequest);
 				AplicarOrigemDoCapitulo(obra, obraRequest);
+				AplicarFontesDosCampos(obra, obraRequest);
 				var result = await _obraFacade.CadastrarObraAsync(obra);
 				if (obraRequest.UltimoCapituloLido != null || obraRequest.StatusLeitura != null)
 					await _leituras.AtualizarAsync(obra.Id, UsuarioId, obraRequest);
@@ -184,9 +188,14 @@ namespace ScrollsTracker.Api.Controllers
 				return NotFound();
 
 			var capituloAnterior = Obra.InterpretarCapitulo(obra.TotalCapitulos);
+			var metadadosAnteriores = (obra.Descricao, obra.Imagem, obra.Status);
 			_mapper.Map(obraRequest, obra);
 			AplicarIdentidade(obra, obraRequest);
 			AplicarOrigemDoCapitulo(obra, obraRequest, capituloAnterior);
+			AplicarFontesDosCampos(obra, obraRequest, metadadosAnteriores);
+			obra.FixarDescricao = obraRequest.FixarDescricao ?? obra.FixarDescricao;
+			obra.FixarImagem = obraRequest.FixarImagem ?? obra.FixarImagem;
+			obra.FixarStatus = obraRequest.FixarStatus ?? obra.FixarStatus;
 			await _leituras.AtualizarAsync(id, UsuarioId, obraRequest);
 			try
 			{
@@ -215,6 +224,30 @@ namespace ScrollsTracker.Api.Controllers
 				return Conflict("Não foi possível salvar o progresso. Recarregue a obra e tente novamente.");
 			}
 		}
+
+		[HttpGet("ContinuarLendo")]
+		public async Task<IActionResult> ContinuarLendoAsync(CancellationToken cancellationToken) =>
+			Ok(await _leituras.ContinuarAsync(UsuarioId, cancellationToken));
+
+		[HttpPut("Obras/{id:int}/seguindo")]
+		public async Task<IActionResult> SeguirAsync(int id, SeguirRequest pedido, CancellationToken cancellationToken)
+		{
+			if (!await _db.Obras.AnyAsync(obra => obra.Id == id, cancellationToken))
+				return NotFound();
+
+			await _leituras.SeguirAsync(id, UsuarioId, pedido.Seguindo!.Value);
+			try
+			{
+				await _db.SaveChangesAsync(cancellationToken);
+				return NoContent();
+			}
+			catch (DbUpdateException)
+			{
+				return Conflict("Não foi possível salvar. Tente novamente.");
+			}
+		}
+
+		public sealed record SeguirRequest([Required] bool? Seguindo);
 
 		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]
 		[HttpDelete("DeletarObra/{id}")]
@@ -261,6 +294,7 @@ namespace ScrollsTracker.Api.Controllers
 					obra = _mapper.Map<Obra>(entrada);
 					AplicarIdentidade(obra, entrada);
 					AplicarOrigemDoCapitulo(obra, entrada);
+					AplicarFontesDosCampos(obra, entrada);
 					_db.Obras.Add(obra);
 					await _db.SaveChangesAsync();
 				}
@@ -316,6 +350,36 @@ namespace ScrollsTracker.Api.Controllers
 				obra.FonteUltimoCapitulo = entrada.FonteUltimoCapitulo;
 				obra.UltimoCapituloDetectadoEm = DateTime.UtcNow;
 			}
+		}
+
+		private static void AplicarFontesDosCampos(Obra obra, ObraRequest entrada,
+			(string? Descricao, string? Imagem, string? Status) anterior = default)
+		{
+			obra.FonteDescricao = FonteDoCampo(obra.Descricao, anterior.Descricao, entrada.FonteDescricao, obra.FonteDescricao);
+			obra.FonteImagem = FonteDoCampo(obra.Imagem, anterior.Imagem, entrada.FonteImagem, obra.FonteImagem);
+			obra.FonteStatus = FonteDoCampo(obra.Status, anterior.Status, entrada.FonteStatus, obra.FonteStatus);
+		}
+
+		private static EnumSources? FonteDoCampo(string? valor, string? anterior, EnumSources? fonteInformada, EnumSources? fonteAnterior) =>
+			string.IsNullOrWhiteSpace(valor) ? null
+				: fonteInformada is { } fonte && Enum.IsDefined(fonte) ? fonte
+				: valor == anterior ? fonteAnterior : null;
+
+		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]
+		[HttpGet("diagnostico-fontes")]
+		public async Task<IActionResult> DiagnosticoFontesAsync(
+			CancellationToken cancellationToken, [FromQuery, Range(1, int.MaxValue)] int pagina = 1)
+		{
+			const int tamanho = 20;
+			var total = await _db.Obras.CountAsync(cancellationToken);
+			var paginas = Math.Max(1, (total + tamanho - 1) / tamanho);
+			pagina = Math.Min(pagina, paginas);
+			var obras = await _db.Obras.AsNoTracking()
+				.OrderByDescending(obra => obra.ConsultaFontesEm).ThenBy(obra => obra.Titulo).ThenBy(obra => obra.Id)
+				.Skip((pagina - 1) * tamanho).Take(tamanho)
+				.Select(obra => new { obra.Id, obra.Titulo, obra.ConsultaFontesEm, obra.UltimaConsultaFontes })
+				.ToListAsync(cancellationToken);
+			return Ok(new { pagina, paginas, obras });
 		}
 
 		[Authorize(Policy = ContaConfig.PodeGerenciarObras)]

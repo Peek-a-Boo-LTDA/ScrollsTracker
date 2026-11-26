@@ -237,6 +237,9 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("ConsultaFontesEm")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("DataAtualizacao")
                         .HasColumnType("TEXT");
 
@@ -244,15 +247,39 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Descricao")
+                        .IsConcurrencyToken()
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("FixarDescricao")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("FixarImagem")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("FixarStatus")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("FonteDescricao")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("FonteImagem")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("FonteStatus")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("FonteUltimoCapitulo")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Imagem")
+                        .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
+                        .IsConcurrencyToken()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StatusLeitura")
@@ -272,6 +299,12 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                     b.Property<string>("TotalCapitulos")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("UltimaConsultaFontes")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("'{}'");
 
                     b.Property<DateTime?>("UltimoCapituloDetectadoEm")
                         .HasColumnType("TEXT");
@@ -296,12 +329,33 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                     b.ToTable("Obras");
                 });
 
+            modelBuilder.Entity("ScrollsTracker.Infra.Repository.Context.PreferenciaResumo", b =>
+                {
+                    b.Property<string>("UsuarioId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Frequencia")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("UsuarioId");
+
+                    b.ToTable("PreferenciasResumo");
+                });
+
             modelBuilder.Entity("ScrollsTracker.Infra.Repository.Context.UsuarioObra", b =>
                 {
                     b.Property<string>("UsuarioId")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ObraId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("LeituraAtualizadaEm")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Seguindo")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("StatusLeitura")
@@ -377,6 +431,15 @@ namespace ScrollsTracker.Infra.Migrations.SqliteMigrations
                         .IsRequired();
 
                     b.Navigation("Obra");
+                });
+
+            modelBuilder.Entity("ScrollsTracker.Infra.Repository.Context.PreferenciaResumo", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ScrollsTracker.Infra.Repository.Context.UsuarioObra", b =>
